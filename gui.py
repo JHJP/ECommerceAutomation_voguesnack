@@ -12,15 +12,12 @@ url3 = "https://www.onch3.co.kr/login/login_web.php"
 url4 = "https://www.onch3.co.kr/dbcenter_renewal/index.php"
 smart_url = "https://accounts.commerce.naver.com/login?url=https%3A%2F%2Fsell.smartstore.naver.com%2F%23%2Flogin-callback"
 naver_datalab_url = "https://datalab.naver.com/"
-# id = "papagogo041@gmail.com"
-# password = "9Hy:Snc9nqH8.9F"
-# id2 = "onchan"
-# password2 = "T-vtXPDK6qBerh!"
 loginbtn1 = '.sc-iAEyYk.loQZmZ'
 loginbtn2 = '.btn.btn-lg.btn-primary.btn-block'
 smart_login_btn = 'ul.panel_wrap li.panel_item .panel_inner .btn_login_wrap .btn_login'
 download_path = '/Users/papag/Downloads'
 file_prefix_all = "셀하 아이템 발굴 EXCEL_전체"
+file_prefix_editable = "스마트스토어상품"
 closeBtnXPath = '//*[@id="ch-shadow-root-wrapper"]/article/div/div/div[2]/button'
 
 # Initialize the WebDriver
@@ -37,6 +34,7 @@ def set_default_text():
 def initialize_webdriver():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
     driver = webdriver.Edge()
+    driver.maximize_window()
     EdgeTool = Tool(driver, result_text)
     EdgeSourcing = Sourcing(driver, tool=EdgeTool)
     EdgeUploading = Uploading(driver, tool=EdgeTool)
@@ -62,9 +60,13 @@ def sourcing_action():
                 EdgeSourcing.targetListMaker(pd.read_csv('sourced.csv', encoding='utf-8-sig'), False)
                 break
             except ElementClickInterceptedException:
-                    message = "[!] Element intercpeted. Move the page and press enter.\n"
+                    message = "[!] Element intercepted while sourcing.\n"
                     EdgeTool.append_to_text_widget(message, "red")
-                    input("[!] Element intercpeted. Move the page and press enter.")
+                    print("[!] Element intercepted. Scroll down the page.")
+                    EdgeTool.scroll_downer(250)
+                    message = "[*] Element intercepted fixed while sourcing.\n"
+                    EdgeTool.append_to_text_widget(message, "blue")
+
 def uploading_action():
     while True:
             try:
@@ -79,54 +81,60 @@ def uploading_action():
                 EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',loginbtn2, False)
                 EdgeTool.popupHandler(3)
                 EdgeUploading.keywordCompare(pd.read_csv('preprocesedSourced.csv', encoding='utf-8-sig'), False, margin)
-                # Start the pricing
-                EdgeTool.priceSetting(smart_url, smart_id, smart_pw, 'smart', smart_login_btn)
                 break
             except ElementClickInterceptedException:
-                    message = "[!] Element intercpeted. Move the page and press enter.\n"
+                    message = "[!] Element intercepted while uploading.\n"
                     EdgeTool.append_to_text_widget(message, "red")
-                    input("[!] Element intercpeted. Move the page and press enter.")
+                    EdgeTool.scroll_downer(250)
+                    message = "[*] Element intercepted fixed while uploading.\n"
+                    EdgeTool.append_to_text_widget(message, "blue")
 
 def daily_sourcing_uploading_action():
+    margin = int(margin_var.get())
+    onchan_id = id2_var.get()
+    onchan_pw = password2_var.get()
+    smart_id = smart_id_var.get()
+    smart_pw = smart_pw_var.get()
+    isloggedin = False
+    global driver, EdgeSourcing, EdgeUploading, EdgeTool
     while True:
             try:
-                margin = int(margin_var.get())
-                onchan_id = id2_var.get()
-                onchan_pw = password2_var.get()
-                smart_id = smart_id_var.get()
-                smart_pw = smart_pw_var.get()
-                global driver, EdgeSourcing, EdgeUploading, EdgeTool
                 naver_sourced_df = EdgeSourcing.daily_sourcing()
                 naver_sourced_isEdited_df = EdgeSourcing.targetListMaker(naver_sourced_df, True)
-                EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',loginbtn2, False)
-                EdgeTool.popupHandler(3)
+                if not isloggedin:
+                    isloggedin = EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',loginbtn2, False)
+                    EdgeTool.popupHandler(3)
                 EdgeUploading.keywordCompare(naver_sourced_isEdited_df, True, margin)
-                # Start the pricing
-                EdgeTool.priceSetting(smart_url, smart_id, smart_pw, 'smart', smart_login_btn)
                 break
             except ElementClickInterceptedException:
-                    message = "[!] Element intercpeted. Move the page and press enter.\n"
+                    message = "[!] Element intercepted while daily.\n"
                     EdgeTool.append_to_text_widget(message, "red")
-                    input("[!] Element intercpeted. Move the page and press enter.")
+                    EdgeTool.scroll_downer(250)
+                    message = "[*] Element intercepted fixed while daily.\n"
+                    EdgeTool.append_to_text_widget(message, "blue")
 
 def discount_rate_pricing_action():
+    isLoggedin = False
+    smart_id = smart_id_var.get()
+    smart_pw = smart_pw_var.get()
+    global driver, EdgeSourcing, EdgeUploading, EdgeTool
     while True:
             try:
-                smart_id = smart_id_var.get()
-                smart_pw = smart_pw_var.get()
-                global driver, EdgeSourcing, EdgeUploading, EdgeTool
                 # Start the pricing
-                EdgeTool.priceSetting(smart_url, smart_id, smart_pw, 'smart', smart_login_btn)
+                if not isLoggedin:
+                    isLoggedin = EdgeSourcing.login(url,smart_id,smart_pw,'id','pw',smart_login_btn, True)
+                EdgeTool.priceSetting('smart')
                 break
             except ElementClickInterceptedException:
-                    message = "[!] Element intercpeted. Move the page and press enter.\n"
+                    message = "[!] Element intercepted. \n"
                     EdgeTool.append_to_text_widget(message, "red")
-                    input("[!] Element intercpeted. Move the page and press enter.")
+                    print("[!] Element intercepted. Scroll down the page.")
+                    EdgeTool.scroll_downer(250)
 
 # Initialize the main window
 root = tk.Tk()
 root.title("Automation Tool")
-root.geometry("400x400")
+root.geometry("500x400")
 
 # Create StringVars for entries
 id_var = tk.StringVar()
