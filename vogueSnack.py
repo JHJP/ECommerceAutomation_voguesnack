@@ -6,13 +6,14 @@ import time
 from selenium.webdriver.common.action_chains import ActionChains
 import os.path
 import pandas as pd
-from selenium.common.exceptions import NoSuchElementException, NoAlertPresentException, StaleElementReferenceException, ElementClickInterceptedException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, NoAlertPresentException, StaleElementReferenceException, ElementClickInterceptedException, TimeoutException, ElementNotInteractableException
 from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.keys import Keys
 import tkinter as tk
 from tkinter import messagebox
 import sys
 import pyperclip
+import re
 
 class Sourcing:
     def __init__(self, driver, tool=None):
@@ -35,7 +36,7 @@ class Sourcing:
             windows = self.driver.window_handles
             smart_login_windows = windows[1]
             self.driver.switch_to.window(smart_login_windows)
-            print("[+] Move to the opend tab successful.")
+            print("[+] Move to the opened tab successful.")
         self.driver.find_element(By.NAME, usernameBox).send_keys(id)
         self.driver.find_element(By.NAME, passwordBox).send_keys(password)
         self.driver.find_element(By.CSS_SELECTOR, loginbtn).click() # use CSS_SELECTOR to change class name format. Because there are spaces on class name, which means not a single class.
@@ -63,7 +64,6 @@ class Sourcing:
         errors = self.driver.find_elements(By.CLASS_NAME,"flash-error")
         # if we find that error message within errors, then login is failed
         if any(error_message in e.text for e in errors):
-            # print("[!] Navigation failed")
             message = "[!] Navigation failed.\n"
             self.tool.append_to_text_widget(message, "red")
         else:
@@ -83,7 +83,6 @@ class Sourcing:
         errors = self.driver.find_elements(By.CLASS_NAME,"flash-error")
         # if we find that error message within errors, then login is failed
         if any(error_message in e.text for e in errors):
-            # print("[!] Category button clicked failed")
             message = "[!] Category button clicked failed.\n"
             self.tool.append_to_text_widget(message, "red")
         else:
@@ -107,7 +106,6 @@ class Sourcing:
         errors = self.driver.find_elements(By.CLASS_NAME,"flash-error")
         # if we find that error message within errors, then login is failed
         if any(error_message in e.text for e in errors):
-            # print("[!] Download buttion click failed")
             message = "[!] Download buttion click failed.\n"
             self.tool.append_to_text_widget(message, "red")
         else:
@@ -158,42 +156,43 @@ class Sourcing:
             preprocessed_df.insert(preprocessed_df.columns.get_loc('키워드') + 1, '바꾼키워드', None)
             preprocessed_df.insert(preprocessed_df.columns.get_loc('바꾼키워드') + 1, 'isSearched', False)
             preprocessed_df.insert(preprocessed_df.columns.get_loc('isSearched') + 1, 'isEdited', False)
+        if not isDaily: # Not make the list when do the daily sourcing and uploading.
+            print(f"There are number of {len(preprocessed_df)} items.")
+            # Stack to keep history of DataFrame states
+            history = []
 
-        print(f"There are number of {len(preprocessed_df)} items.")
-         # Stack to keep history of DataFrame states
-        history = []
+            i = 0
+            while i < len(preprocessed_df):
+                isEdited = preprocessed_df['isEdited'][i]
 
-        i = 0
-        while i < len(preprocessed_df):
-            isEdited = preprocessed_df['isEdited'][i]
+                if not isEdited:
+                    decision = input(f"i={i}, {preprocessed_df.iloc[i]['키워드']}; Tell me the word you want to change (1=delete, 2=maintain, 3=undo): ")
+                    if decision == '3' and history:
+                        preprocessed_df = history.pop()  # Revert to the last state
+                        if i > 0:
+                            i -= 1
+                        preprocessed_df.reset_index(drop=True, inplace=True)
+                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                        continue
+                    else:
+                        history.append(preprocessed_df.copy())  # Save the current state
 
-            if not isEdited:
-                decision = input(f"i={i}, {preprocessed_df.iloc[i]['키워드']}; Tell me the word you want to change (1=delete, 2=maintain, 3=undo): ")
-                if decision == '3' and history:
-                    preprocessed_df = history.pop()  # Revert to the last state
-                    if i > 0:
+                    if decision == '1': # drop the row
+                        preprocessed_df.drop(preprocessed_df.index[i], inplace=True)
+                        preprocessed_df.reset_index(drop=True, inplace=True)
                         i -= 1
-                    preprocessed_df.reset_index(drop=True, inplace=True)
-                    preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
-                    continue
-                else:
-                    history.append(preprocessed_df.copy())  # Save the current state
-
-                if decision == '1': # drop the row
-                    preprocessed_df.drop(preprocessed_df.index[i], inplace=True)
-                    preprocessed_df.reset_index(drop=True, inplace=True)
-                    i -= 1
-                    preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
-                elif decision == '2': # Maintain the keyword
-                    preprocessed_df.at[i, '바꾼키워드'] = preprocessed_df.at[i, '키워드']
-                    preprocessed_df.at[i, 'isEdited'] = True
-                    preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
-                else: # Change the keyword
-                    preprocessed_df.at[i, '바꾼키워드'] = decision
-                    preprocessed_df.at[i, 'isEdited'] = True
-                    preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
-            i += 1
-        preprocessed_df.drop_duplicates(subset='바꾼키워드', inplace=True)
+                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                    elif decision == '2': # Maintain the keyword
+                        preprocessed_df.at[i, '바꾼키워드'] = preprocessed_df.at[i, '키워드']
+                        preprocessed_df.at[i, 'isEdited'] = True
+                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                    else: # Change the keyword
+                        preprocessed_df.at[i, '바꾼키워드'] = decision
+                        preprocessed_df.at[i, 'isEdited'] = True
+                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                i += 1
+        if not isDaily:
+            preprocessed_df.drop_duplicates(subset='바꾼키워드', inplace=True)
         preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
         return preprocessed_df
     
@@ -242,7 +241,6 @@ class Sourcing:
             print("[+] Daily sourcing start.")
             for i in range(3,10):
                 # Progress bar
-                self.tool.display_progress_bar(7, i-3)
 
                 domain_dropdown.click()
                 time.sleep(3)
@@ -269,7 +267,7 @@ class Uploading:
         # self.tool = tool or Tool(driver, uploading=self)
         self.tool = tool
 
-    def sending_store(self, checkboxes_numb, originalTarget, btn_path, store_name, margin):
+    def sending_store(self, checkboxes_numb, originalTarget, btn_path, store_name, net_profit_ratio, delivery_charge_list, discount_rate_calculation, isDaily):
         print(f"[+] Sending to {store_name} store start." )
         while True:
             try:
@@ -298,68 +296,102 @@ class Uploading:
             WebDriverWait(self.driver, 30).until(EC.element_to_be_clickable((By.XPATH, f"//ul[@class='{store_name}_page_li']/li[{i+1}]/ul/li[2]/input[@class='{store_name}_prd_nm']")))
             ActionChains(self.driver).move_to_element(inputTextbox).click().perform()
             inputTextbox.send_keys(Keys.END)
-            inputTextbox.send_keys(" " + originalTarget + " 대용")
+            if not isDaily:
+                inputTextbox.send_keys(" " + originalTarget + " 대용")
+            if isDaily:
+                inputTextbox.send_keys(" " + originalTarget)
         # Price manager
-        print(f" [*] Price managing process start. Margin = {margin}%")
+        print(f" [*] Price managing process start. Net profit ratio = {net_profit_ratio}%")
         discount_rate_list = []
-        retail_prices = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, f"//ul[@class='{store_name}_page_li']/li/ul/li/span[@class='{store_name}_cus_price']")))
-        wholesale_prices = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, f"//ul[@class='{store_name}_page_li']/li//li[@class='{store_name}_option_price']")))
-        prd_codes = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, f"//ul[@class='{store_name}_page_li']/li/ul/li[@class='{store_name}_prd_code']")))
-        checkboxes_numb = len(retail_prices)
+        # checkboxes_numb = len(retail_prices)
         for i in range(checkboxes_numb):
             while True:
                 try:
-                    # Check for the option edit button presence.
                     if store_name == 'coupang':
-                        print("1")
+                        # Check for the option edit button presence.
                         edit_button = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located(
                             (By.XPATH, f'/html/body/div[3]/section/div/div[3]/ul/li[{i+1}]/ul/li[3]/button')))
+                        retail_price = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[3]/ul/li[{i + 1}]/ul/li[3]/span")))
+                        wholesale_price = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[3]/ul/li[{i+1}]/ul/li[4]")))
+                        prd_code = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[3]/ul/li[{i+1}]/ul/li[1]")))
                     elif store_name == 'smart':
+                        # Check for the option edit button presence.
                         edit_button = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located(
                             (By.XPATH, f'/html/body/div[3]/section/div/div[2]/ul/li[{i+1}]/ul/li[5]/button')))
+                        retail_price = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[2]/ul/li[{i + 1}]/ul/li[3]/span")))
+                        wholesale_price = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[2]/ul/li[{i+1}]/ul/li[4]")))
+                        prd_code = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[2]/ul/li[{i+1}]/ul/li[1]")))
                 except TimeoutException:
                     i += 1
                     break    
-                retail_price = int(retail_prices[i].text)
-                wholesale_price = int(wholesale_prices[i].text.replace('원',''))
+                retail_price = int(retail_price.text)
+                wholesale_price = int(wholesale_price.text.replace('원',''))
+                prd_code = prd_code.text
                 if store_name == 'coupang':
-                    updated_retail_price = str(round(wholesale_price*(margin*0.01+1),-1))
+                    # Calculate the retail price
+                    sc = 0.109 + 0.0109 # sales commission with VAT: sales commission is differed between category. But I set it to tme maximum sales commission(10.9%).
+                    dc = 0.03 + 0.003 # delievery commission with VAT
+                    ait = 0.06 # aggregate income tax
+                        # Iterate through the list to find the matching product code
+                    for code, charge in delivery_charge_list:
+                        if code == prd_code:
+                            max_delivery_charge = charge
+                            break  # Exit the loop once the match is found
+                    updated_retail_price = int(1/(1-sc)*(wholesale_price*((net_profit_ratio*0.01/(1-ait))+1)+max_delivery_charge*dc))
+                    updated_retail_price =(updated_retail_price+5)//10*10 # round up from the first digit.    
+                        # If is discount rate = True -> run the next code. else, just update the retail price
+                    if discount_rate_calculation == True:
+                        if retail_price > updated_retail_price:
+                            discount_rate = int((retail_price / updated_retail_price)*100 - 100)
+                            discount_rate =(discount_rate+5)//10*10
+                        else:
+                            discount_rate = 0
+                    # while True:
+                    #     print("coupang: 2-2")
+                    #     discount_rate = round(1 - ((wholesale_price*((net_profit_ratio/100)+1))/retail_price),2)*100
+                    #     if discount_rate > 0:
+                    #         discount_rate2 = round(1 - ((wholesale_price*((net_profit_ratio/100)+1))/retail_price),2)*100
+                    #         if discount_rate2 == discount_rate:
+                    #             discount_rate = int(discount_rate)
+                    #             updated_retail_price = int(retail_price*(1-(discount_rate*0.01)))
+                    #             # round up in the first digit
+                    #             updated_retail_price =(updated_retail_price+5)//10*10
+                    #             break
+                        # else:
+                        #     discount_rate = 0
+                        #     updated_retail_price = retail_price
+                        #     break
                     edit_button.click()
                     time.sleep(0.5)
                     # Check if there are more than one option
                     retail_price_inputs = []
-                    print("2")
                     retail_price_inputs = WebDriverWait(self.driver, 2).until(EC.presence_of_all_elements_located(
                         (By.XPATH, f'/html/body/div[3]/section/div/div[3]/ul/li[{i + 1}]/ul/li[3]/div/ul/li/ul/li[2]/input[1]')))
                     isOpions = True
                     if len(retail_price_inputs) == 1:
-                        retail_price_input = retail_price_inputs[0]
                         isOpions = False
-                    if not isOpions:
-                        # time.sleep(1)
+                        retail_price_input = retail_price_inputs[0]
                         retail_price_input.clear()
-                        # time.sleep(1)
                         retail_price_input.send_keys(updated_retail_price)
-                        # time.sleep(1)
                     elif isOpions:
-                        prd_code = prd_codes[i].text
                         prices = [input_element.get_attribute('value') for input_element in retail_price_inputs]
-                        # Check if all prices are unique
-                        if len(prices) > 1 and len(prices) == len(set(prices)):
-                            # All prices are different
+                        # Check if all option's prices are same
+                        if len(prices) > 1 and len(prices) == len(set(prices)):# Not same
                             message = f" [!] {prd_code} has more than one option and the prices are different.\n"
                             self.tool.append_to_text_widget(message, "red")
-                        for j in range(len(retail_price_inputs)):
-                            retail_price_input = retail_price_inputs[j]
-                            # time.sleep(1)
-                            retail_price_input.clear()
-                            # time.sleep(1)
-                            retail_price_input.send_keys(updated_retail_price)
-                    # Save the discount rate for the pricing
-                    # discount_rate = round(1 - ((wholesale_price*(margin*0.01+1))/retail_price),2)*100
-                    # prd_code = prd_codes[i].text
-                    # discount_rate_list.append((prd_code, discount_rate))
-                    print("3")
+                            for j in range(len(retail_price_inputs)):
+                                wholesale_price = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[3]/ul/li[2]/ul/li[3]/div/ul/li[{j+1}]/ul/li[3]")))
+                                wholesale_price = int(wholesale_price.text.replace('원',''))
+                                updated_retail_price = int(1/(1-sc)*(wholesale_price*((net_profit_ratio*0.01/(1-ait))+1)+max_delivery_charge*dc))
+                                updated_retail_price =(updated_retail_price+5)//10*10
+                                retail_price_input = retail_price_inputs[j]
+                                retail_price_input.clear()
+                                retail_price_input.send_keys(updated_retail_price)
+                        else:
+                            for j in range(len(retail_price_inputs)):
+                                retail_price_input = retail_price_inputs[j]
+                                retail_price_input.clear()
+                                retail_price_input.send_keys(updated_retail_price)
                     done_btn = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located(
                             (By.XPATH, f"/html/body/div[3]/section/div/div[3]/ul/li[{i + 1}]/ul/li[3]/div/div[2]/button[1]")))
                     done_btn.click()
@@ -377,62 +409,81 @@ class Uploading:
                             self.tool.append_to_text_widget(message, "blue")
                             self.tool.scroll_downer(250)
                     time.sleep(0.5)
+                    # Calculate the retail price
+                    omc = 0.0363 # Order managing commission
+                    npic = 0.02 # Naver pay influx commission
+                    ait = 0.06
+                        # Iterate through the list to find the matching product code
+                    for code, charge in delivery_charge_list:
+                        if code == prd_code:
+                            max_delivery_charge = charge
+                            break  # Exit the loop once the match is found
+                    updated_retail_price = int((1/(1-omc-npic))*(wholesale_price*((net_profit_ratio*0.01)/(1-ait)+1)+max_delivery_charge)-max_delivery_charge)
+                    updated_retail_price =(updated_retail_price+5)//10*10
+                        # If is discount rate = True -> run the next code. else, just update the retail price
+                    if discount_rate_calculation == True:
+                        if retail_price > updated_retail_price:
+                            discount_rate = int((retail_price / updated_retail_price)*100 - 100)
+                            discount_rate =(discount_rate+5)//10*10
+                        else:
+                            discount_rate = 0
                     # Check if there are more than one option
                     retail_price_inputs = []
-                    print("2")
                     retail_price_inputs = WebDriverWait(self.driver, 2).until(EC.presence_of_all_elements_located(
                         (By.XPATH, f'/html/body/div[3]/section/div/div[2]/ul/li[{i + 1}]/ul/li[3]/div/ul/li/ul/li[2]/input[1]')))
                     isOpions = True
                     if len(retail_price_inputs) == 1:
                         isOpions = False
-                        prd_code = prd_codes[i].text
-                    elif isOpions:
-                        prd_code = prd_codes[i].text
+                        retail_price_input = retail_price_inputs[0]
+                        retail_price_input.clear()
+                        retail_price_input.send_keys(updated_retail_price)
+                    if isOpions:
                         prices = [input_element.get_attribute('value') for input_element in retail_price_inputs]
-                        # Check if all prices are unique
-                        if len(prices) > 1 and len(prices) == len(set(prices)):
-                            # All prices are different
+                        # Check if all the option's prices are same
+                        if len(prices) > 1 and len(prices) == len(set(prices)): # Not same
                             message = f" [!] {prd_code} has more than one option and the prices are different.\n"
                             self.tool.append_to_text_widget(message, "red")
-                        # message = f" [!] {prd_code} has more than one option in {store_name}.\n"
-                        # self.tool.append_to_text_widget(message, "red")
-                        # for j in range(len(retail_price_inputs)):
-                        #     retail_price_input = retail_price_inputs[j]
-                        #     message = f"  [!] 기존 옵션{j} 소매가: {retail_price_inputs[j].text}.\n"
-                        #     self.tool.append_to_text_widget(message, "red")
-                    # Save the discount rate for the pricing
-                    while True:
-                        discount_rate = round(1 - ((wholesale_price*((margin/100)+1))/retail_price),2)*100
-                        if discount_rate > 0:
-                            discount_rate2 = round(1 - ((wholesale_price*((margin/100)+1))/retail_price),2)*100
-                            if discount_rate2 == discount_rate:
-                                print(f" [*] {prd_code} discount_rate: {discount_rate}")
-                                break
-                    discount_rate_list.append((prd_code, discount_rate))
-                    print("3")
+                            for j in range(len(retail_price_inputs)):
+                                wholesale_price = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[2]/ul/li[2]/ul/li[3]/div/ul/li[{j+1}]/ul/li[3]")))
+                                wholesale_price = int(wholesale_price.text.replace('원',''))
+                                updated_retail_price = int((1/(1-omc-npic))*(wholesale_price*((net_profit_ratio*0.01)/(1-ait)+1)+max_delivery_charge)-max_delivery_charge)
+                                updated_retail_price =(updated_retail_price+5)//10*10
+                                retail_price_input = retail_price_inputs[j]
+                                retail_price_input.clear()
+                                retail_price_input.send_keys(updated_retail_price)
+                        else:# Same
+                            for j in range(len(retail_price_inputs)):
+                                retail_price_input = retail_price_inputs[j]
+                                retail_price_input.clear()
+                                retail_price_input.send_keys(updated_retail_price)
+                        
+                    if discount_rate_calculation:
+                        discount_rate_list.append((prd_code, discount_rate))
                     done_btn = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located(
                             (By.XPATH, f"/html/body/div[3]/section/div/div[2]/ul/li[{i + 1}]/ul/li[3]/div/div[2]/button[1]")))
                     done_btn.click()
                     i += 1
                     break
-        print("4")
-        # Check for the existing smart_discount_rate_daily
-        files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
-        # Check if there is a smart_discount_rate_daily.csv
-        matching_files = [file for file in files if file.startswith("smart_discount_rate_daily")]
-        if matching_files:
-            df_exist = pd.read_csv("smart_discount_rate_daily.csv")
-        else:
-            df_exist = pd.DataFrame(columns=['prd_code', 'discount_rate'])
-        df_new = pd.DataFrame(discount_rate_list, columns=['prd_code', 'discount_rate'])
-        df_discount = pd.concat([df_exist, df_new], ignore_index=True)
-        df_discount.to_csv("smart_discount_rate_daily.csv", encoding='utf-8-sig' , index = False)
+        print(f"Sending to {store_name}...")
+        if discount_rate_calculation == True:
+            # Check for the existing smart_discount_rate_daily
+            files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
+            # Check if there is a smart_discount_rate_daily.csv
+            matching_files = [file for file in files if file.startswith("smart_discount_rate_daily")]
+            if matching_files:
+                df_exist = pd.read_csv("smart_discount_rate_daily.csv")
+            else:
+                df_exist = pd.DataFrame(columns=['prd_code', 'discount_rate'])
+            df_new = pd.DataFrame(discount_rate_list, columns=['prd_code', 'discount_rate'])
+            df_discount = pd.concat([df_exist.astype(df_new.dtypes), df_new.astype(df_exist.dtypes)], ignore_index=True)
+            # df_discount = pd.concat([df_exist, df_new], ignore_index=True)
+            df_discount.to_csv("smart_discount_rate_daily.csv", encoding='utf-8-sig' , index = False)
         sendBtn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"//button[contains(@class, '{store_name}_modi_btn')]")))
         sendBtn.click()
         self.tool.popupHandler(100)
         print("[+] Sending to store end." )
 
-    def keywordCompare(self, preprocessed_df, isDaily, margin):
+    def keywordCompare(self, preprocessed_df, net_profit_ratio, isDaily, discount_rate_calculation):
         if not isDaily:
             csv_name = 'preprocesedSourcedUpdated.csv'
         elif isDaily:
@@ -448,6 +499,8 @@ class Uploading:
         for i in range(len(targetList)):
             target = targetList[i]
             originalTarget = originalList[i]
+            if isDaily:
+                target = originalTarget
             isSearched = preprocessed_df['isSearched'].iloc[i]
 
             while not isSearched:
@@ -455,9 +508,10 @@ class Uploading:
                 searchTextbox = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="prd_sear_txt"]')))
                 searchTextbox.clear()
                 ActionChains(self.driver).move_to_element(searchTextbox).click().send_keys(target).perform()
-                print(f"[+] keyword typed in successfully: {target}({originalTarget})")
-                # time.sleep(5)
-
+                if not isDaily:
+                    print(f"[+] keyword typed in successfully: {target}({originalTarget})")
+                if isDaily:
+                    print(f"[+] keyword typed in successfully: {target}")
                 # Click on Search Button
                 WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located((By.CLASS_NAME, 'search_btn')))
                 search_btn = self.driver.find_element(By.CLASS_NAME, 'search_btn')
@@ -473,70 +527,82 @@ class Uploading:
                     checkboxes_numb = len(checkboxes)
                     if checkboxes_numb < 5:
                         # Automatic checker
-                        # for checkbox in checkboxes:
-                        #     checkbox.click()
-                        # print(" [*] Checkbox clicked successfully")
-                        # time.sleep(1)
-                        isQuestioned = False
-                        while True:
-                            try:
-                                if not isQuestioned:
-                                    isQuestioned = True
-                                    checkboxes_numb = int(input(" [*] Type 1 to operate sending function.(0 = pass):"))
-                                    break
-                                else:
-                                    checkboxes_numb = int(input(""))
-                            except Exception as e:
-                                if 'ERROR:fallback_task_provider.cc(124)' in str(e):
-                                    continue
-                                else:
-                                    message = " [!] Error occur. Try again?(Y/N).\n"
-                                    self.tool.append_to_text_widget(message, "red")
-                                    isStop = input(" [!] Error occur. Try again?(Y/N).").strip().lower()
-                                    if isStop == 'n':
-                                        checkboxes_numb = 0
-                                        break
-                                    else:
-                                        isQuestioned = False
-                                        continue
+                        try:
+                            checked_prd_num, delivery_charge_list = self.tool.product_checker(4.5, 7)
+                        except Exception as e:
+                            print(e)
+                        # isQuestioned = False
+                        # while True:
+                        #     try:
+                        #         if not isQuestioned:
+                        #             isQuestioned = True
+                        #             checkboxes_numb = int(input(" [*] Type 1 to operate sending function.(0 = pass):"))
+                        #             break
+                        #         else:
+                        #             checkboxes_numb = int(input(""))
+                        #     except Exception as e:
+                        #         if 'ERROR:fallback_task_provider.cc(124)' in str(e):
+                        #             continue
+                        #         else:
+                        #             message = " [!] Error occur. Try again?(Y/N).\n"
+                        #             self.tool.append_to_text_widget(message, "red")
+                        #             isStop = input(" [!] Error occur. Try again?(Y/N).").strip().lower()
+                        #             if isStop == 'n':
+                        #                 checkboxes_numb = 0
+                        #                 break
+                        #             else:
+                        #                 isQuestioned = False
+                        #                 continue
 
-                        if checkboxes_numb == 0:
+                        # if checkboxes_numb == 0:
+                        #     print("[+] Sending to Store passed.")
+                        #     preprocessed_df.loc[i, 'isSearched'] = True
+                        #     preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                        #     break
+
+                        if checked_prd_num == 0:
+                            print(f"Current item number info: ({i+1}/{len(targetList)})")
                             print("[+] Sending to Store passed.")
-                            preprocessed_df['isSearched'].iloc[i] = True
+                            preprocessed_df.loc[i, 'isSearched'] = True
                             preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                             break
+
                         else:
                             smt_btn_path = "//div[@onclick='smartstore_download()']"
                             coup_btn_path = "/html/body/div[3]/section/div/div[1]/div[4]"
-                            self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', margin)
-                            self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', margin)
-                            preprocessed_df['isSearched'].iloc[i] = True
+                            print(f"Current item number info: ({i+1}/{len(targetList)})")
+                            self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, delivery_charge_list, discount_rate_calculation, isDaily)
+                            self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, delivery_charge_list, discount_rate_calculation, isDaily)
+                            preprocessed_df.loc[i, 'isSearched'] = True
                             preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                             break
                     else:
                         # Automatic checker
-                        # for checkbox in checkboxes[:5]:
-                        #     checkbox.click()
-                        # print(" [*] Checkbox clicked successfully")
-                        # time.sleep(1)
-                        checkboxes_numb = int(input(" [*] Type 1 to operate sending function.(0 = pass):"))
-                        if checkboxes_numb == 0:
+                        try:
+                            checked_prd_num, delivery_charge_list = self.tool.product_checker(4.5, 7)
+                        except Exception as e:
+                            print(e)
+                        # checkboxes_numb = int(input(" [*] Type 1 to operate sending function.(0 = pass):"))
+                        if checked_prd_num == 0:
+                            print(f"Current item number info: ({i+1}/{len(targetList)})")
                             print(" [*] Sending to Store passed.")
-                            preprocessed_df['isSearched'].iloc[i] = True
+                            preprocessed_df.loc[i, 'isSearched'] = True
                             preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                             break
                         else:
                             smt_btn_path = "//div[@onclick='smartstore_download()']"
                             coup_btn_path = "/html/body/div[3]/section/div/div[1]/div[4]"
-                            self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', margin)
-                            self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', margin)
-                            preprocessed_df['isSearched'].iloc[i] = True
+                            print(f"Current item number info: ({i+1}/{len(targetList)})")
+                            self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, delivery_charge_list, discount_rate_calculation, isDaily)
+                            self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, delivery_charge_list, discount_rate_calculation, isDaily)
+                            preprocessed_df.loc[i, 'isSearched'] = True
                             preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                             break
 
                 except NoSuchElementException:
+                    print(f"Current item number info: ({i+1}/{len(targetList)})")
                     print(" [*] Not exist")
-                    preprocessed_df['isSearched'].iloc[i] = True
+                    preprocessed_df.loc[i, 'isSearched'] = True
                     preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                     break
             i += 1
@@ -550,19 +616,59 @@ class Tool:
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
 
-    def display_progress_bar(total, progress):
-        """
-        Displays or updates a console progress bar.
-        Accepts a total and a progress, where progress <= total.
-
-        Args:
-        total (int): The total iterations (the '100%' value).
-        progress (int): The current iteration.
-        """
-        percent = 100 * (progress / float(total))
-        bar = '█' * int(percent) + '-' * (100 - int(percent))
-        sys.stdout.write(f'\r[{bar}] {percent:.2f}%')
-        sys.stdout.flush()
+    # Automate checking above the setted rate.
+    def product_checker(self, rate_lowering, max_num):
+        counter = 0
+        delivery_charge_list = []
+        # Set order of descending with margin
+        margin_descend_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="search_filter"]/tbody/tr/td[6]/div/a')))
+        margin_descend_btn.click()
+        prd_view_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]')))
+        prd_view_btn.click()
+        view_200_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]/ul/li[3]')))
+        view_200_btn.click()
+        rating_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li//dd[@class="total_start_num"]')))
+        for i in range(len(rating_list)):
+            rating_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li//dd[@class="total_start_num"]')))
+            if rating_list[i].text == '신규' or rating_list[i].text == 'NaN':
+                continue
+            rating = float(rating_list[i].text)
+            if rating > rate_lowering:
+                prd_image = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="prd_form"]/ul/li[{i + 1}]/dl/dd[2]/a/img')))
+                self.driver.set_page_load_timeout(10)
+                try:
+                    prd_image.click()
+                except TimeoutException:
+                    self.driver.refresh()
+                # Get delevery charge(lower, max)
+                prd_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[4]/ul/li[1]/div[2]')))
+                prd_detail_text = prd_detail.text
+                    # Remove HTML tags if any exist
+                clean_text = re.sub('<[^<]+?>', '', prd_detail_text)
+                    # Find all instances of numeric values (with potential commas)
+                numbers = re.findall(r'\d+,?\d*', clean_text)
+                    # Convert found numbers to integers, considering the commas
+                numbers_int = [int(n.replace(',', '')) for n in numbers]
+                    # The lowest charge is the base charge, which is the first number
+                lowest_charge = numbers_int[0]
+                    # Calculate the maximum charge by adding the highest additional charge to the base charge
+                    # Assuming additional charges are listed after the base charge
+                additional_charges = numbers_int[1:]  # Skip the first number which is the base charge
+                max_charge = lowest_charge + max(additional_charges) if additional_charges else lowest_charge
+                # Get product code
+                prd_code = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[2]/ul/li[3]/div[2]')))
+                prd_code = prd_code.text
+                # Append to the delivery charge list
+                delivery_charge_list.append((prd_code, max_charge))
+                # Move to the back page
+                self.driver.back()
+                counter += 1
+            if counter == max_num:
+                break
+            elif rating <= rate_lowering:
+                continue
+        return counter, delivery_charge_list
+    
 
     def scroll_downer(self, howmuch):
         # Scroll down a little bit
@@ -596,7 +702,7 @@ class Tool:
         # except NoSuchElementException:
         #     print("No web page pop-up present")
     
-    def priceSetting(self, store_name):
+    def discountRateSetting(self, store_name):
         print("[+] Pricing start.")
         if store_name == 'smart':
             while True:
@@ -608,19 +714,22 @@ class Tool:
                     print("[+] Download fixable form process start.")
                     # Move to the product list edit page
                     self.sourcing.pageNavigator('https://sell.smartstore.naver.com/#/products/origin-list')
-                    # Click the dropdown and set to '1000개씩'
+                    # Click the prd view dropdown
                     dropdown = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[2]/div/div/div[2]/div[1]')))
                     dropdown.click()
-                    option = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@id='seller-content']/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[2]/div/div/div[2]/div[2]/div/div[5]")))
+                    #  Set to '500개씩'
+                    option = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@id='seller-content']/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[2]/div/div/div[2]/div[2]/div/div[4]")))
                     option.click()
                     # Check the number of uploaded items checkboxes
                     all_checklBox = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[1]/div[1]/div/div[1]/div[2]/div/label/span')))
                     all_checklBox.click()
-                    # Download and read the editable xlsx files
+                    # Click the xlsx dropdown
                     dropdown_xlsx = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[2]/div/div/div[3]/div[1]/div')))
                     dropdown_xlsx.click()
+                    # Click the xlsx correction form
                     correction_form_download = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[2]/div/div/div[3]/div[2]/div/div[4]')))
                     correction_form_download.click()
+                    # Click the download button
                     download_btn = WebDriverWait(self.driver, 2).until(EC.presence_of_element_located((By.XPATH, "//button[contains(., '다운로드')]")))
                     download_btn.click()
                     # Read the correction form and Edit
@@ -664,36 +773,37 @@ class Tool:
                     else:
                         print("[+] Uploading discount rate start.")
                         # Move to the product list edit page
-                        # self.sourcing.pageNavigator('https://sell.smartstore.naver.com/#/products/origin-list')
+                        self.sourcing.pageNavigator('https://sell.smartstore.naver.com/#/products/origin-list')
                         # Upload the discountRateSetted file to the smart store.
-                        print(1)
                         while True:
                             try:
-                                time.sleep(2)
-                                dropdown_xlsx = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[2]/div/div/div[3]/div[1]')))
-                            # dropdown_xlsx = WebDriverWait(self.driver, 30).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="seller-content"]//div[@class="item" and text()="엑셀 일괄작업"]')))
-                                time.sleep(2)
-                                dropdown_xlsx.click()
+                                while True:
+                                    try:
+                                        time.sleep(2)
+                                        dropdown_xlsx = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[2]/div/div/div[3]/div[1]')))
+                                        time.sleep(2)
+                                        dropdown_xlsx.click()
+                                        break
+                                    except TimeoutException:
+                                        continue
+                                while True:
+                                    try:
+                                        time.sleep(3)
+                                        correction_form_upload = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[2]/div/div/div[3]/div[2]/div/div[5]')))
+                                        time.sleep(2)
+                                        correction_form_upload.click()
+                                        break
+                                    except TimeoutException:
+                                        continue
                                 break
-                            except TimeoutException:
+                            except ElementNotInteractableException:
                                 continue
-                        print(2)
-                        while True:
-                            try:
-                                time.sleep(3)
-                                correction_form_upload = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[2]/div/div/div[3]/div[2]/div/div[5]')))
-                                time.sleep(2)
-                                correction_form_upload.click()
-                                break
-                            except TimeoutException:
-                                print("gogo")
-                                continue
-                        print(3)
                         WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//div[@class='modal-body']//div[@class='seller-input']//a[text()='파일 찾기']")))
                         find_file = WebDriverWait(self.driver, 30).until(EC.element_to_be_clickable((By.XPATH, "//div[@class='modal-body']//div[@class='seller-input']//a[text()='파일 찾기']")))
                         find_file.click()
                         print("[+] Uploading discount rate end.")
                         input("[+] Pricing end. If done, press enter.")
+                        # Delete dummy files
                         os.remove('/Users/papag/OneDrive/src/Projects/vogueSnack/스마트스토어상품_할인률추가.xlsx')
                         print(f"Deleted file: 스마트스토어상품_할인률추가.xlsx")
                         os.remove('/Users/papag/OneDrive/src/Projects/vogueSnack/smart_discount_rate_daily.csv')

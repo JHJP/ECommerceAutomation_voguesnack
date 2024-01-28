@@ -29,7 +29,7 @@ def set_default_text():
     password2_entry.insert(0, "T-vtXPDK6qBerh!")
     smart_id_entry.insert(0,"voguesnack")
     smart_pw_entry.insert(0,"rq3.XW.NzXuaCc8")
-    margin_entry.insert(0, "10")
+    net_profit_ratio_entry.insert(0, "10")
 
 def initialize_webdriver():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
@@ -70,7 +70,7 @@ def sourcing_action():
 def uploading_action():
     while True:
             try:
-                margin = int(margin_var.get())
+                net_profit_ratio = int(net_profit_ratio_var.get())
                 onchan_id = id2_var.get()
                 onchan_pw = password2_var.get()
                 smart_id = smart_id_var.get()
@@ -80,7 +80,7 @@ def uploading_action():
                 # time.sleep(5)
                 EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',loginbtn2, False)
                 EdgeTool.popupHandler(3)
-                EdgeUploading.keywordCompare(pd.read_csv('preprocesedSourced.csv', encoding='utf-8-sig'), False, margin)
+                EdgeUploading.keywordCompare(pd.read_csv('preprocesedSourced.csv', encoding='utf-8-sig'), net_profit_ratio, isDaily=False, discount_rate_calculation=False)
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted while uploading.\n"
@@ -90,7 +90,7 @@ def uploading_action():
                     EdgeTool.append_to_text_widget(message, "blue")
 
 def daily_sourcing_uploading_action():
-    margin = int(margin_var.get())
+    net_profit_ratio = int(net_profit_ratio_var.get())
     onchan_id = id2_var.get()
     onchan_pw = password2_var.get()
     smart_id = smart_id_var.get()
@@ -100,12 +100,13 @@ def daily_sourcing_uploading_action():
     while True:
             try:
                 naver_sourced_df = EdgeSourcing.daily_sourcing()
-                naver_sourced_isEdited_df = EdgeSourcing.targetListMaker(naver_sourced_df, True)
+                naver_sourced_isEdited_df = EdgeSourcing.targetListMaker(naver_sourced_df, isDaily=True)
                 if not isloggedin:
                     isloggedin = EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',loginbtn2, False)
                     EdgeTool.popupHandler(3)
-                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, True, margin)
-                break
+                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, isDaily=True, discount_rate_calculation=False)
+                # return discount_rate_pricing_action() # If you want to use automize discount rate setting, turn on the line.
+            
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted while daily.\n"
                     EdgeTool.append_to_text_widget(message, "red")
@@ -123,7 +124,7 @@ def discount_rate_pricing_action():
                 # Start the pricing
                 if not isLoggedin:
                     isLoggedin = EdgeSourcing.login(url,smart_id,smart_pw,'id','pw',smart_login_btn, True)
-                EdgeTool.priceSetting('smart')
+                EdgeTool.discountRateSetting('smart')
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted. \n"
@@ -143,7 +144,7 @@ id2_var = tk.StringVar()
 password2_var = tk.StringVar()
 smart_id_var = tk.StringVar()
 smart_pw_var = tk.StringVar()
-margin_var = tk.StringVar()
+net_profit_ratio_var = tk.StringVar()
 
 # Creating Frames for each set of label and entry for better alignment
 frame1 = tk.Frame(root)
@@ -161,7 +162,7 @@ label_id2 = tk.Label(frame3, text="Onchan ID")
 label_password2 = tk.Label(frame4, text="Onchan PW")
 label_smart_id = tk.Label(frame5, text="Smart ID")
 label_smart_pw = tk.Label(frame6, text="Smart PW")
-label_margin = tk.Label(frame7, text="Margin(%)")
+label_net_profit_ratio = tk.Label(frame7, text="Net profit ratio(%)")
 
 # Create Entries
 id_entry = tk.Entry(frame1, textvariable=id_var)
@@ -170,7 +171,7 @@ id2_entry = tk.Entry(frame3, textvariable=id2_var)
 password2_entry = tk.Entry(frame4, textvariable=password2_var, show="*")
 smart_id_entry = tk.Entry(frame5, textvariable=smart_id_var)
 smart_pw_entry = tk.Entry(frame6, textvariable=smart_pw_var, show="*")
-margin_entry = tk.Entry(frame7, textvariable=margin_var)
+net_profit_ratio_entry = tk.Entry(frame7, textvariable=net_profit_ratio_var)
 
 # Packing Labels and Entries in their respective frames
 label_id.pack(side=tk.LEFT)
@@ -185,8 +186,8 @@ label_smart_id.pack(side=tk.LEFT)
 smart_id_entry.pack(side=tk.RIGHT)
 label_smart_pw.pack(side=tk.LEFT)
 smart_pw_entry.pack(side=tk.RIGHT)
-label_margin.pack(side=tk.LEFT)
-margin_entry.pack(side=tk.RIGHT)
+label_net_profit_ratio.pack(side=tk.LEFT)
+net_profit_ratio_entry.pack(side=tk.RIGHT)
 
 # Packing Frames
 frame1.pack()
