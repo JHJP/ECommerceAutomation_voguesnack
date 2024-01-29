@@ -296,7 +296,7 @@ class Uploading:
         # self.tool = tool or Tool(driver, uploading=self)
         self.tool = tool
 
-    def sending_store(self, checkboxes_numb, originalTarget, btn_path, store_name, net_profit_ratio, delivery_charge_list, discount_rate_calculation, isDaily):
+    def sending_store(self, checkboxes_numb, originalTarget, btn_path, store_name, net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge):
         print(f"[+] Sending to {store_name} store start." )
         while True:
             try:
@@ -362,12 +362,18 @@ class Uploading:
                     dc = 0.03 + 0.003 # delievery commission with VAT
                     ait = 0.06 # aggregate income tax
                         # Iterate through the list to find the matching product code
-                    for code, charge in delivery_charge_list:
+                    for code, charge in max_delivery_charge_list:
                         if code == prd_code:
                             max_delivery_charge = charge
                             break  # Exit the loop once the match is found
                     updated_retail_price = int(1/(1-sc)*(wholesale_price*((net_profit_ratio*0.01/(1-ait))+1)+max_delivery_charge*dc))
                     updated_retail_price =(updated_retail_price+5)//10*10 # round up from the first digit.    
+                    if not isDeliveryCharge:
+                        for code, charge in lowest_delivery_charge_list:
+                            if code == prd_code:
+                                lowest_delivery_charge = charge
+                                break  # Exit the loop once the match is found
+                        updated_retail_price += lowest_delivery_charge
                         # If is discount rate = True -> run the next code. else, just update the retail price
                     if discount_rate_calculation == True:
                         if retail_price > updated_retail_price:
@@ -413,6 +419,8 @@ class Uploading:
                                 wholesale_price = int(wholesale_price.text.replace('원',''))
                                 updated_retail_price = int(1/(1-sc)*(wholesale_price*((net_profit_ratio*0.01/(1-ait))+1)+max_delivery_charge*dc))
                                 updated_retail_price =(updated_retail_price+5)//10*10
+                                if not isDeliveryCharge:
+                                    updated_retail_price += lowest_delivery_charge
                                 retail_price_input = retail_price_inputs[j]
                                 retail_price_input.clear()
                                 retail_price_input.send_keys(updated_retail_price)
@@ -443,12 +451,18 @@ class Uploading:
                     npic = 0.02 # Naver pay influx commission
                     ait = 0.06
                         # Iterate through the list to find the matching product code
-                    for code, charge in delivery_charge_list:
+                    for code, charge in max_delivery_charge_list:
                         if code == prd_code:
                             max_delivery_charge = charge
                             break  # Exit the loop once the match is found
                     updated_retail_price = int((1/(1-omc-npic))*(wholesale_price*((net_profit_ratio*0.01)/(1-ait)+1)+max_delivery_charge)-max_delivery_charge)
                     updated_retail_price =(updated_retail_price+5)//10*10
+                    if not isDeliveryCharge:
+                        for code, charge in max_delivery_charge_list:
+                            if code == prd_code:
+                                lowest_delivery_charge = charge
+                                break  # Exit the loop once the match is found
+                        updated_retail_price += lowest_delivery_charge
                         # If is discount rate = True -> run the next code. else, just update the retail price
                     if discount_rate_calculation == True:
                         if retail_price > updated_retail_price:
@@ -477,6 +491,8 @@ class Uploading:
                                 wholesale_price = int(wholesale_price.text.replace('원',''))
                                 updated_retail_price = int((1/(1-omc-npic))*(wholesale_price*((net_profit_ratio*0.01)/(1-ait)+1)+max_delivery_charge)-max_delivery_charge)
                                 updated_retail_price =(updated_retail_price+5)//10*10
+                                if not isDeliveryCharge:
+                                    updated_retail_price += lowest_delivery_charge
                                 retail_price_input = retail_price_inputs[j]
                                 retail_price_input.clear()
                                 retail_price_input.send_keys(updated_retail_price)
@@ -512,7 +528,7 @@ class Uploading:
         self.tool.popupHandler(100)
         print("[+] Sending to store end." )
 
-    def keywordCompare(self, preprocessed_df, net_profit_ratio, isDaily, discount_rate_calculation):
+    def keywordCompare(self, preprocessed_df, net_profit_ratio, isDaily, discount_rate_calculation, isDeliveryCharge_coupang, isDeliveryCharge_smart):
         if not isDaily:
             csv_name = 'preprocesedSourcedUpdated.csv'
         elif isDaily:
@@ -557,7 +573,7 @@ class Uploading:
                     if checkboxes_numb < 5:
                         # Automatic checker
                         try:
-                            checked_prd_num, delivery_charge_list = self.tool.product_checker(4.5, 7)
+                            checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(4.5, 7)
                         except Exception as e:
                             print(e)
                         # isQuestioned = False
@@ -600,15 +616,15 @@ class Uploading:
                             smt_btn_path = "//div[@onclick='smartstore_download()']"
                             coup_btn_path = "/html/body/div[3]/section/div/div[1]/div[4]"
                             print(f"Current item number info: ({i+1}/{len(targetList)})")
-                            self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, delivery_charge_list, discount_rate_calculation, isDaily)
-                            self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, delivery_charge_list, discount_rate_calculation, isDaily)
+                            self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
+                            self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
                             preprocessed_df.loc[i, 'isSearched'] = True
                             preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                             break
                     else:
                         # Automatic checker
                         try:
-                            checked_prd_num, delivery_charge_list = self.tool.product_checker(4.5, 7)
+                            checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(4.5, 7)
                         except Exception as e:
                             print(e)
                         # checkboxes_numb = int(input(" [*] Type 1 to operate sending function.(0 = pass):"))
@@ -622,8 +638,8 @@ class Uploading:
                             smt_btn_path = "//div[@onclick='smartstore_download()']"
                             coup_btn_path = "/html/body/div[3]/section/div/div[1]/div[4]"
                             print(f"Current item number info: ({i+1}/{len(targetList)})")
-                            self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, delivery_charge_list, discount_rate_calculation, isDaily)
-                            self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, delivery_charge_list, discount_rate_calculation, isDaily)
+                            self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
+                            self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
                             preprocessed_df.loc[i, 'isSearched'] = True
                             preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                             break
@@ -645,10 +661,86 @@ class Tool:
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
 
+    def delivery_charge_changer(self,storename, isDeliveryCharge):
+        print(f"[+] Start delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge}")
+        if not isDeliveryCharge:
+            # Move to the view/edit products page
+            if storename == 'coupang':
+                self.sourcing.pageNavigator('https://wing.coupang.com/vendor-inventory/list?searchIds=&startTime=2000-01-01&endTime=2099-12-31&productName=&brandName=&manufacturerName=&productType=&autoPricingStatus=ALL&dateType=productRegistrationDate&dateRangeShowStyle=true&dateRange=all&saleEndDatePeriodType=&includeUsedProduct=&deleteType=false&deliveryMethod=&shippingType=&shipping=&otherType=&productStatus=SAVED,WAIT_FOR_SALE,VALID,SOLD_OUT,INVALID,END_FOR_SALE,APPROVING,IN_REVIEW,DENIED,PARTIAL_APPROVED,APPROVED,ALL&advanceConditionShow=false&displayCategoryCodes=&currentMenuCode=&rocketMerchantVersion=&registrationType=&upBundling=ALL&hasUpBundlingItem=&hasBadImage=false&page=1&countPerPage=50&sortField=vendorInventoryId&desc=true&fromListV2=true&locale=ko_KR&vendorItemViolationType=&coupangAttributeOptimized=FALSE&autoPricingActive=')
+                time.sleep(0.5)
+                all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[2]/span/span[1]/label')))
+                time.sleep(0.5)
+                all_btn.click()
+                time.sleep(0.5)
+                on_sale_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[2]/span/span[4]/label')))
+                time.sleep(0.5)
+                on_sale_btn.click()
+                time.sleep(0.5)
+                advance_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[2]/dd/button[3]')))
+                time.sleep(0.5)
+                advance_search_btn.click()
+                time.sleep(0.5)
+                shipping_type_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[9]/div/span[6]/div/ul[1]/li')))
+                time.sleep(0.5)
+                shipping_type_btn.click()
+                time.sleep(0.5)
+                paid_shipping_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[9]/div/span[6]/div/ul[2]/li[3]/div')))
+                time.sleep(0.5)
+                paid_shipping_btn.click()
+                time.sleep(0.5)
+                show_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[2]/div/div/ul[1]/li')))
+                time.sleep(0.5)
+                show_btn.click()
+                time.sleep(0.5)
+                show_500_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[2]/div/div/ul[2]/li[5]/div/div')))
+                time.sleep(0.5)
+                show_500_btn.click()
+                while True:
+                    try:
+                        print(" [*] Wait for the table loading...")
+                        WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                        break
+                    except TimeoutException:
+                        print(" [*] Wait for the table loading...")
+                table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table')))
+                # Assuming the scrollable container is a direct parent of the table
+                scrollable_container = table.find_element(By.XPATH, "./..")
+                scroll_script = "arguments[0].scrollLeft = 3200;"  # Adjust scrollLeft for 27th column
+                self.driver.execute_script(scroll_script, scrollable_container)
+                for i in range(3):
+                    for j in range(10):
+                        time.sleep(0.5)
+                        shipping_edit_btn = WebDriverWait(self.driver, 2).until(EC.presence_of_element_located((By.XPATH, f"//*[@id='rootContainer']/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[{10*i+j+1}]/td[27]")))
+                        time.sleep(0.5)
+                        shipping_edit_btn.click()
+                        time.sleep(0.5)
+                        paid_delievery_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[2]/div[2]/div[2]/div/div/div[6]/div/div[1]/div/div[2]/div/div/ul[1]/li')))
+                        time.sleep(0.5)
+                        paid_delievery_btn.click()
+                        time.sleep(0.5)
+                        free_shipping_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[2]/div[2]/div[2]/div/div/div[6]/div/div[1]/div/div[2]/div/div/ul[2]/li[1]/div')))
+                        time.sleep(0.5)
+                        free_shipping_btn.click()
+                        time.sleep(0.5)
+                        save_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[3]/div/button[2]')))
+                        time.sleep(0.5)
+                        save_btn.click()
+                        time.sleep(0.5)
+                        confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="container-wing-v2"]/div[3]/div[2]/div[6]/button[2]')))
+                        time.sleep(0.5)
+                        confirm_btn.click()
+                        time.sleep(1)
+                    table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table')))
+                    # Assuming the scrollable container is a direct parent of the table
+                    scrollable_container = table.find_element(By.XPATH, "./..")
+                    self.driver.execute_script(f'arguments[0].scrollTop = {640*(i+1)}', scrollable_container) # Scroll down the table for 640px
+        print(f"[+] Delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge} end.")
+    
     # Automate checking above the setted rate.
     def product_checker(self, rate_lowering, max_num):
         counter = 0
-        delivery_charge_list = []
+        max_delivery_charge_list = []
+        lowest_delivery_charge_list = []
         # Set order of descending with margin
         margin_descend_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="search_filter"]/tbody/tr/td[6]/div/a')))
         margin_descend_btn.click()
@@ -688,7 +780,8 @@ class Tool:
                 prd_code = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"//div[@class='prod_detail_title' and contains(text(), '제품코드')]/following-sibling::div[1]")))
                 prd_code = prd_code.text
                 # Append to the delivery charge list
-                delivery_charge_list.append((prd_code, max_charge))
+                max_delivery_charge_list.append((prd_code, max_charge))
+                lowest_delivery_charge_list.append((prd_code, lowest_charge))
                 # Move to the back page
                 self.driver.back()
                 counter += 1
@@ -696,7 +789,7 @@ class Tool:
                 break
             elif rating <= rate_lowering:
                 continue
-        return counter, delivery_charge_list
+        return counter, max_delivery_charge_list, lowest_delivery_charge_list
     
 
     def scroll_downer(self, howmuch):

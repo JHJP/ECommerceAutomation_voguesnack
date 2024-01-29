@@ -30,6 +30,8 @@ def set_default_text():
     password2_entry.insert(0, "T-vtXPDK6qBerh!")
     smart_id_entry.insert(0,"voguesnack")
     smart_pw_entry.insert(0,"rq3.XW.NzXuaCc8")
+    coupang_id_entry.insert(0,"voguesnack")
+    coupang_pw_entry.insert(0,"9w_kPvtu8Qcj93u")
     net_profit_ratio_entry.insert(0, "10")
 
 def initialize_webdriver():
@@ -105,7 +107,8 @@ def uploading_action():
                 # Move to the data center hompage and compare keywords if there is in the center or not.
                 EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',loginbtn2, False)
                 EdgeTool.popupHandler(3)
-                EdgeUploading.keywordCompare(pd.read_csv('preprocesedSourced.csv', encoding='utf-8-sig'), net_profit_ratio, isDaily=False, discount_rate_calculation=False)
+                preprocesedSourced_df = pd.read_csv('preprocesedSourced.csv', encoding='utf-8-sig')
+                EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True)
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted while uploading.\n"
@@ -118,6 +121,7 @@ def uploading_action():
 def monthly_sourcing_uploading_action():
     sourcing_action()
     uploading_action()
+    delivery_charge_changing_action()
     input("press enter to close the program.")
 
 def daily_sourcing_uploading_action():
@@ -135,7 +139,7 @@ def daily_sourcing_uploading_action():
                 if not isloggedin:
                     isloggedin = EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',loginbtn2, False)
                     EdgeTool.popupHandler(3)
-                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, isDaily=True, discount_rate_calculation=False)
+                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True)
                 # return discount_rate_pricing_action() # If you want to use automize discount rate setting, turn on the line.
                 break
             except ElementClickInterceptedException:
@@ -146,10 +150,36 @@ def daily_sourcing_uploading_action():
                     EdgeTool.append_to_text_widget(message, "blue")
     input("press enter to close the program.")
 
+def delivery_charge_changing_action():
+    isLoggedin = False
+    smart_id = smart_id_var.get()
+    smart_pw = smart_pw_var.get()
+    coupang_id = coupang_id_var.get()
+    coupang_pw = coupang_pw_var.get()
+    url = 'https://xauth.coupang.com/auth/realms/seller/protocol/openid-connect/auth?response_type=code&client_id=wing&redirect_uri=https%3A%2F%2Fwing.coupang.com%2Fsso%2Flogin?returnUrl%3D%252F&state=456c3cf5-a6dd-4f52-abe4-cd3364bad4e4&login=true&scope=openid'
+    usernameBox = 'username'
+    passwordBox = 'password'
+    loginbtn = '.cp-loginpage__form__submit'
+    global driver, EdgeSourcing, EdgeUploading, EdgeTool
+    while True:
+            try:
+                if not isLoggedin:
+                    isLoggedin = EdgeSourcing.login(url, coupang_id, coupang_pw, usernameBox, passwordBox, loginbtn, isNewTab=False)
+                EdgeTool.delivery_charge_changer('coupang',isDeliveryCharge=False)
+                break
+            except ElementClickInterceptedException:
+                    message = "[!] Element intercepted. \n"
+                    EdgeTool.append_to_text_widget(message, "red")
+                    print("[!] Element intercepted. Scroll down the page.")
+                    EdgeTool.scroll_downer(250)
+                 
+
 def discount_rate_pricing_action():
     isLoggedin = False
     smart_id = smart_id_var.get()
     smart_pw = smart_pw_var.get()
+    coupang_id = coupang_id_var.get()
+    coupang_pw = coupang_pw_var.get()
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
     while True:
             try:
@@ -176,6 +206,8 @@ id2_var = tk.StringVar()
 password2_var = tk.StringVar()
 smart_id_var = tk.StringVar()
 smart_pw_var = tk.StringVar()
+coupang_id_var = tk.StringVar()
+coupang_pw_var = tk.StringVar()
 net_profit_ratio_var = tk.StringVar()
 
 # Creating Frames for each set of label and entry for better alignment
@@ -186,6 +218,8 @@ frame4 = tk.Frame(root)
 frame5 = tk.Frame(root)
 frame6 = tk.Frame(root)
 frame7 = tk.Frame(root)
+frame8 = tk.Frame(root)
+frame9 = tk.Frame(root)
 
 # Create Labels
 label_id = tk.Label(frame1, text="Sellha ID")
@@ -194,7 +228,9 @@ label_id2 = tk.Label(frame3, text="Onchan ID")
 label_password2 = tk.Label(frame4, text="Onchan PW")
 label_smart_id = tk.Label(frame5, text="Smart ID")
 label_smart_pw = tk.Label(frame6, text="Smart PW")
-label_net_profit_ratio = tk.Label(frame7, text="Net profit ratio(%)")
+label_coupang_id = tk.Label(frame7, text="Smart ID")
+label_coupang_pw = tk.Label(frame8, text="Smart PW")
+label_net_profit_ratio = tk.Label(frame9, text="Net profit ratio(%)")
 
 # Create Entries
 id_entry = tk.Entry(frame1, textvariable=id_var)
@@ -203,7 +239,9 @@ id2_entry = tk.Entry(frame3, textvariable=id2_var)
 password2_entry = tk.Entry(frame4, textvariable=password2_var, show="*")
 smart_id_entry = tk.Entry(frame5, textvariable=smart_id_var)
 smart_pw_entry = tk.Entry(frame6, textvariable=smart_pw_var, show="*")
-net_profit_ratio_entry = tk.Entry(frame7, textvariable=net_profit_ratio_var)
+coupang_id_entry = tk.Entry(frame7, textvariable=coupang_id_var)
+coupang_pw_entry = tk.Entry(frame8, textvariable=coupang_pw_var, show="*")
+net_profit_ratio_entry = tk.Entry(frame9, textvariable=net_profit_ratio_var)
 
 # Packing Labels and Entries in their respective frames
 label_id.pack(side=tk.LEFT)
@@ -218,6 +256,10 @@ label_smart_id.pack(side=tk.LEFT)
 smart_id_entry.pack(side=tk.RIGHT)
 label_smart_pw.pack(side=tk.LEFT)
 smart_pw_entry.pack(side=tk.RIGHT)
+label_coupang_id.pack(side=tk.LEFT)
+coupang_id_entry.pack(side=tk.RIGHT)
+label_coupang_pw.pack(side=tk.LEFT)
+coupang_pw_entry.pack(side=tk.RIGHT)
 label_net_profit_ratio.pack(side=tk.LEFT)
 net_profit_ratio_entry.pack(side=tk.RIGHT)
 
@@ -229,6 +271,8 @@ frame4.pack()
 frame5.pack()
 frame6.pack()
 frame7.pack()
+frame8.pack()
+frame9.pack()
 
 # Create buttons for Sourcing and Uploading
 sourcing_btn = tk.Button(root, text="Monthly Sourcing", command=sourcing_action)
