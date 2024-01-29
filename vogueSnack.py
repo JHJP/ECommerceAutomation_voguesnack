@@ -44,6 +44,7 @@ class Sourcing:
         WebDriverWait(driver=self.driver, timeout=10).until(
             lambda x: x.execute_script("return document.readyState === 'complete'")
         )
+        isLoggedin = True
         if isNewTab:
             input(f"Process? password: {password}")
             print("[+] Login successful")
@@ -112,22 +113,26 @@ class Sourcing:
             print("[+] Download button clicked successfully")
         
 
-    def downloadChecker(self, download_path, file_prefix):
+    def downloadChecker(self, download_path, file_prefix, first_phase):
         counter = 0
         while True:
             time.sleep(3)
             files = os.listdir(download_path)
             matching_files = [file for file in files if file.startswith(file_prefix)]
             if not matching_files and counter < 3:
-                print(f"{file_prefix} no exist. I'll check again.")
+                print(f" [*] {file_prefix} no exist. I'll check again.")
                 counter += 1
                 continue
             elif not matching_files and counter >= 3:
-                input(f"{file_prefix} no exist. Download again.If you ready, press enter.")
+                if first_phase:
+                    return False
+                input(f" [*] {file_prefix} no exist.Press enter to recheck.")
                 counter = 0
                 continue
             else:
-                print("[+] Excel file downloaded successfully. Start reading.")
+                print(f"[+] {file_prefix} downloaded successfully. Start reading.")
+                if first_phase:
+                    return True
                 # Construct the full path to the first matching file
                 file_to_check = os.path.join(download_path, matching_files[0])
                 if os.path.isfile(file_to_check):
@@ -136,10 +141,10 @@ class Sourcing:
                         dictionary = pd.read_excel(file_to_check, sheet_name=None)
                         # Concatenate all DataFrames from each sheet into one DataFrame
                         df = pd.concat(dictionary, ignore_index=True)
-                        print("[+] Excel file read successfully.")
+                        print(f"[+] {file_prefix} read successfully.")
                     except ValueError:
                         df = pd.read_csv(file_to_check, encoding='utf-8')
-                        print("[+] CSV file read successfully.")
+                        print(f"[+] {file_prefix} read successfully.")
                     # You can now work with the 'df' DataFrame.
                     return df
                 
@@ -166,13 +171,18 @@ class Sourcing:
                 isEdited = preprocessed_df['isEdited'][i]
 
                 if not isEdited:
-                    decision = input(f"i={i}, {preprocessed_df.iloc[i]['키워드']}; Tell me the word you want to change (1=delete, 2=maintain, 3=undo): ")
+                    decision = input(f"({i}/{len(preprocessed_df)}), {preprocessed_df.iloc[i]['키워드']}; Tell me the word you want to change (1=delete, 2=maintain, 3=undo): ")
                     if decision == '3' and history:
                         preprocessed_df = history.pop()  # Revert to the last state
                         if i > 0:
                             i -= 1
                         preprocessed_df.reset_index(drop=True, inplace=True)
-                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                        while True:
+                            try:
+                                preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                                break
+                            except PermissionError:
+                                print("Permission error occuer. Close the opened file named preprocesedSourced.csv.")
                         continue
                     else:
                         history.append(preprocessed_df.copy())  # Save the current state
@@ -181,20 +191,39 @@ class Sourcing:
                         preprocessed_df.drop(preprocessed_df.index[i], inplace=True)
                         preprocessed_df.reset_index(drop=True, inplace=True)
                         i -= 1
-                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                        while True:
+                            try:
+                                preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                                break
+                            except PermissionError:
+                                print("Permission error occuer. Close the opened file named preprocesedSourced.csv.")
                     elif decision == '2': # Maintain the keyword
                         preprocessed_df.at[i, '바꾼키워드'] = preprocessed_df.at[i, '키워드']
                         preprocessed_df.at[i, 'isEdited'] = True
-                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                        while True:
+                            try:
+                                preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                                break
+                            except PermissionError:
+                                print("Permission error occuer. Close the opened file named preprocesedSourced.csv.")
                     else: # Change the keyword
                         preprocessed_df.at[i, '바꾼키워드'] = decision
                         preprocessed_df.at[i, 'isEdited'] = True
-                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                        while True:
+                            try:
+                                preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                                break
+                            except PermissionError:
+                                print("Permission error occuer. Close the opened file named preprocesedSourced.csv.")
                 i += 1
         if not isDaily:
             preprocessed_df.drop_duplicates(subset='바꾼키워드', inplace=True)
-        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
-        return preprocessed_df
+        while True:
+            try:
+                preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                break
+            except PermissionError:
+                print("Permission error occuer. Close the opened file named preprocesedSourced.csv.")
     
     # Make keyword list from the sorted dataframe.
     def preProcessor(self, df, search_volume):
@@ -380,7 +409,7 @@ class Uploading:
                             message = f" [!] {prd_code} has more than one option and the prices are different.\n"
                             self.tool.append_to_text_widget(message, "red")
                             for j in range(len(retail_price_inputs)):
-                                wholesale_price = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[3]/ul/li[2]/ul/li[3]/div/ul/li[{j+1}]/ul/li[3]")))
+                                wholesale_price = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[3]/ul/li[{i+1}]/ul/li[3]/div/ul/li[{j+1}]/ul/li[3]")))
                                 wholesale_price = int(wholesale_price.text.replace('원',''))
                                 updated_retail_price = int(1/(1-sc)*(wholesale_price*((net_profit_ratio*0.01/(1-ait))+1)+max_delivery_charge*dc))
                                 updated_retail_price =(updated_retail_price+5)//10*10
@@ -444,7 +473,7 @@ class Uploading:
                             message = f" [!] {prd_code} has more than one option and the prices are different.\n"
                             self.tool.append_to_text_widget(message, "red")
                             for j in range(len(retail_price_inputs)):
-                                wholesale_price = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[2]/ul/li[2]/ul/li[3]/div/ul/li[{j+1}]/ul/li[3]")))
+                                wholesale_price = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[2]/ul/li[{i+1}]/ul/li[3]/div/ul/li[{j+1}]/ul/li[3]")))
                                 wholesale_price = int(wholesale_price.text.replace('원',''))
                                 updated_retail_price = int((1/(1-omc-npic))*(wholesale_price*((net_profit_ratio*0.01)/(1-ait)+1)+max_delivery_charge)-max_delivery_charge)
                                 updated_retail_price =(updated_retail_price+5)//10*10
@@ -638,8 +667,8 @@ class Tool:
                 self.driver.set_page_load_timeout(10)
                 try:
                     prd_image.click()
-                except TimeoutException:
-                    self.driver.refresh()
+                except Exception:
+                    self.driver.execute_script("window.stop();") # stop loading the page
                 # Get delevery charge(lower, max)
                 prd_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[4]/ul/li[1]/div[2]')))
                 prd_detail_text = prd_detail.text
@@ -656,7 +685,7 @@ class Tool:
                 additional_charges = numbers_int[1:]  # Skip the first number which is the base charge
                 max_charge = lowest_charge + max(additional_charges) if additional_charges else lowest_charge
                 # Get product code
-                prd_code = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[2]/ul/li[3]/div[2]')))
+                prd_code = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"//div[@class='prod_detail_title' and contains(text(), '제품코드')]/following-sibling::div[1]")))
                 prd_code = prd_code.text
                 # Append to the delivery charge list
                 delivery_charge_list.append((prd_code, max_charge))
@@ -685,22 +714,22 @@ class Tool:
             try:
                 alert = Alert(self.driver)
                 alert_text = alert.text
-                print("Alert Text:", alert_text)
+                print(" [*] Alert Text:", alert_text)
                 alert.accept()  # Use alert.dismiss() if you want to cancel the alert
-                print("Alert closed")
+                print(" [*] Alert closed")
                 break
             except NoAlertPresentException:
                 time.sleep(1)
                 counter += 1
             
         # Handling Web Page Pop-Up
-        # try:
-        #     # Assuming the close button has a unique identifier (e.g., ID, class, or XPath)
-        #     close_button = self.driver.find_element(By.XPATH, closeBtnXPath)
-        #     close_button.click()
-        #     print("Web page pop-up closed")
-        # except NoSuchElementException:
-        #     print("No web page pop-up present")
+        try:
+            # Sellha close button.
+            close_button = self.driver.find_element(By.XPATH, "/html/body/div[3]/div/div[2]/div/div[2]/div[2]/button")
+            close_button.click()
+            print(" [*] Web page pop-up closed")
+        except NoSuchElementException:
+            print(" [*] No web page pop-up present")
     
     def discountRateSetting(self, store_name):
         print("[+] Pricing start.")
@@ -733,7 +762,7 @@ class Tool:
                     download_btn = WebDriverWait(self.driver, 2).until(EC.presence_of_element_located((By.XPATH, "//button[contains(., '다운로드')]")))
                     download_btn.click()
                     # Read the correction form and Edit
-                    smart_df = self.sourcing.downloadChecker('/Users/papag/Downloads', "스마트스토어상품")
+                    smart_df = self.sourcing.downloadChecker('/Users/papag/Downloads', "스마트스토어상품", first_phase=False)
                     print("[+] Download fixable form process end.")
                 else:
                     # Check for the existing smart_discount_rate_daily
@@ -741,7 +770,7 @@ class Tool:
                     # Check if there is a smart_discount_rate_daily.csv
                     matching_files = [file for file in files if file.startswith("스마트스토어상품_할인률추가")]
                     if not matching_files:
-                        smart_df = self.sourcing.downloadChecker('/Users/papag/Downloads', "스마트스토어상품")
+                        smart_df = self.sourcing.downloadChecker('/Users/papag/Downloads', "스마트스토어상품", first_phase=False)
                         print("[+] Appending discount rate start.")
                         smart_discount_rate_df = pd.read_csv('smart_discount_rate_daily.csv', encoding='utf-8-sig')
                         # Create new dataframe which is editable
