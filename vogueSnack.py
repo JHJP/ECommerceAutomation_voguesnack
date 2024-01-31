@@ -332,7 +332,6 @@ class Uploading:
         # Price manager
         print(f" [*] Price managing process start. Net profit ratio = {net_profit_ratio}%")
         discount_rate_list = []
-        # checkboxes_numb = len(retail_prices)
         for i in range(checkboxes_numb):
             while True:
                 try:
@@ -561,35 +560,6 @@ class Uploading:
                             checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(4.5, 7, is_margin_descend)
                         except Exception as e:
                             print(e)
-                        # isQuestioned = False
-                        # while True:
-                        #     try:
-                        #         if not isQuestioned:
-                        #             isQuestioned = True
-                        #             checkboxes_numb = int(input(" [*] Type 1 to operate sending function.(0 = pass):"))
-                        #             break
-                        #         else:
-                        #             checkboxes_numb = int(input(""))
-                        #     except Exception as e:
-                        #         if 'ERROR:fallback_task_provider.cc(124)' in str(e):
-                        #             continue
-                        #         else:
-                        #             message = " [!] Error occur. Try again?(Y/N).\n"
-                        #             self.tool.append_to_text_widget(message, "red")
-                        #             isStop = input(" [!] Error occur. Try again?(Y/N).").strip().lower()
-                        #             if isStop == 'n':
-                        #                 checkboxes_numb = 0
-                        #                 break
-                        #             else:
-                        #                 isQuestioned = False
-                        #                 continue
-
-                        # if checkboxes_numb == 0:
-                        #     print("[+] Sending to Store passed.")
-                        #     preprocessed_df.loc[i, 'isSearched'] = True
-                        #     preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
-                        #     break
-
                         if checked_prd_num == 0:
                             print(f"Current item number info: ({i+1}/{len(targetList)})")
                             print("[+] Sending to Store passed.")
@@ -612,7 +582,6 @@ class Uploading:
                             checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(4.5, 7, is_margin_descend)
                         except Exception as e:
                             print(e)
-                        # checkboxes_numb = int(input(" [*] Type 1 to operate sending function.(0 = pass):"))
                         if checked_prd_num == 0:
                             print(f"Current item number info: ({i+1}/{len(targetList)})")
                             print(" [*] Sending to Store passed.")
@@ -767,30 +736,39 @@ class Tool:
                     prd_image.click()
                 except Exception:
                     self.driver.execute_script("window.stop();") # stop loading the page
-                # Get delevery charge(lower, max)
-                prd_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[4]/ul/li[1]/div[2]')))
-                prd_detail_text = prd_detail.text
-                    # Remove HTML tags if any exist
-                clean_text = re.sub('<[^<]+?>', '', prd_detail_text)
-                    # Find all instances of numeric values (with potential commas)
-                numbers = re.findall(r'\d+,?\d*', clean_text)
-                    # Convert found numbers to integers, considering the commas
-                numbers_int = [int(n.replace(',', '')) for n in numbers]
-                    # The lowest charge is the base charge, which is the first number
-                lowest_charge = numbers_int[0]
-                    # Calculate the maximum charge by adding the highest additional charge to the base charge
-                    # Assuming additional charges are listed after the base charge
-                additional_charges = numbers_int[1:]  # Skip the first number which is the base charge
-                max_charge = lowest_charge + max(additional_charges) if additional_charges else lowest_charge
-                # Get product code
-                prd_code = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"//div[@class='prod_detail_title' and contains(text(), '제품코드')]/following-sibling::div[1]")))
-                prd_code = prd_code.text
-                # Append to the delivery charge list
-                max_delivery_charge_list.append((prd_code, max_charge))
-                lowest_delivery_charge_list.append((prd_code, lowest_charge))
-                # Move to the back page
-                self.driver.back()
-                counter += 1
+                # Get if price autonomy or not
+                price_autonomy_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[3]/ul/li[3]/div[2]/span')))
+                price_autonomy_detail_text = price_autonomy_detail.text
+                if price_autonomy_detail_text == "가격자율":
+                    # Get delevery charge(lower, max)
+                    delievery_fee_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[4]/ul/li[1]/div[2]')))
+                    delievery_fee_detail_text = delievery_fee_detail.text
+                        # Remove HTML tags if any exist
+                    clean_delievery_fee_detail_text = re.sub('<[^<]+?>', '', delievery_fee_detail_text)
+                        # Find all instances of numeric values (with potential commas)
+                    delievery_fees = re.findall(r'\d+,?\d*', clean_delievery_fee_detail_text)
+                        # Convert found numbers to integers, considering the commas
+                    delievery_fees_int = [int(n.replace(',', '')) for n in delievery_fees]
+                        # The lowest charge is the base charge, which is the first number
+                    lowest_charge = delievery_fees_int[0]
+                        # Calculate the maximum charge by adding the highest additional charge to the base charge
+                        # Assuming additional charges are listed after the base charge
+                    additional_charges = delievery_fees_int[1:]  # Skip the first number which is the base charge
+                    max_charge = lowest_charge + max(additional_charges) if additional_charges else lowest_charge
+                    # Get product code
+                    prd_code = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"//div[@class='prod_detail_title' and contains(text(), '제품코드')]/following-sibling::div[1]")))
+                    prd_code = prd_code.text
+                    # Append to the delivery charge list
+                    max_delivery_charge_list.append((prd_code, max_charge))
+                    lowest_delivery_charge_list.append((prd_code, lowest_charge))
+                    # Move to the back page
+                    self.driver.back()
+                    counter += 1
+                else: # If the price autonomy is false, back to the page and deselect the product.
+                    self.driver.back()
+                    checkbox = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="prd_form"]/ul/li[{i+1}]/dl/dd[1]/span[1]')))
+                    checkbox.click()
+                    continue
             if counter == max_num:
                 break
             elif rating <= rate_lowering:
