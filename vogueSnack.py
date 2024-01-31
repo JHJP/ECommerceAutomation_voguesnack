@@ -326,9 +326,9 @@ class Uploading:
             ActionChains(self.driver).move_to_element(inputTextbox).click().perform()
             inputTextbox.send_keys(Keys.END)
             if not isDaily:
-                inputTextbox.send_keys(" " + originalTarget + " 대용")
+                inputTextbox.send_keys(" " + originalTarget + " 대체품")
             if isDaily:
-                inputTextbox.send_keys(" " + originalTarget)
+                inputTextbox.send_keys(" " + originalTarget + " 대체품")
         # Price manager
         print(f" [*] Price managing process start. Net profit ratio = {net_profit_ratio}%")
         discount_rate_list = []
@@ -381,21 +381,6 @@ class Uploading:
                             discount_rate =(discount_rate+5)//10*10
                         else:
                             discount_rate = 0
-                    # while True:
-                    #     print("coupang: 2-2")
-                    #     discount_rate = round(1 - ((wholesale_price*((net_profit_ratio/100)+1))/retail_price),2)*100
-                    #     if discount_rate > 0:
-                    #         discount_rate2 = round(1 - ((wholesale_price*((net_profit_ratio/100)+1))/retail_price),2)*100
-                    #         if discount_rate2 == discount_rate:
-                    #             discount_rate = int(discount_rate)
-                    #             updated_retail_price = int(retail_price*(1-(discount_rate*0.01)))
-                    #             # round up in the first digit
-                    #             updated_retail_price =(updated_retail_price+5)//10*10
-                    #             break
-                        # else:
-                        #     discount_rate = 0
-                        #     updated_retail_price = retail_price
-                        #     break
                     edit_button.click()
                     time.sleep(0.5)
                     # Check if there are more than one option
@@ -528,7 +513,7 @@ class Uploading:
         self.tool.popupHandler(100)
         print("[+] Sending to store end." )
 
-    def keywordCompare(self, preprocessed_df, net_profit_ratio, isDaily, discount_rate_calculation, isDeliveryCharge_coupang, isDeliveryCharge_smart):
+    def keywordCompare(self, preprocessed_df, net_profit_ratio, isDaily, discount_rate_calculation, isDeliveryCharge_coupang, isDeliveryCharge_smart, is_margin_descend):
         if not isDaily:
             csv_name = 'preprocesedSourcedUpdated.csv'
         elif isDaily:
@@ -573,7 +558,7 @@ class Uploading:
                     if checkboxes_numb < 5:
                         # Automatic checker
                         try:
-                            checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(4.5, 7)
+                            checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(4.5, 7, is_margin_descend)
                         except Exception as e:
                             print(e)
                         # isQuestioned = False
@@ -624,7 +609,7 @@ class Uploading:
                     else:
                         # Automatic checker
                         try:
-                            checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(4.5, 7)
+                            checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(4.5, 7, is_margin_descend)
                         except Exception as e:
                             print(e)
                         # checkboxes_numb = int(input(" [*] Type 1 to operate sending function.(0 = pass):"))
@@ -707,43 +692,64 @@ class Tool:
                 scrollable_container = table.find_element(By.XPATH, "./..")
                 scroll_script = "arguments[0].scrollLeft = 3200;"  # Adjust scrollLeft for 27th column
                 self.driver.execute_script(scroll_script, scrollable_container)
-                for i in range(3):
-                    for j in range(10):
-                        time.sleep(0.5)
-                        shipping_edit_btn = WebDriverWait(self.driver, 2).until(EC.presence_of_element_located((By.XPATH, f"//*[@id='rootContainer']/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[{10*i+j+1}]/td[27]")))
-                        time.sleep(0.5)
-                        shipping_edit_btn.click()
-                        time.sleep(0.5)
-                        paid_delievery_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[2]/div[2]/div[2]/div/div/div[6]/div/div[1]/div/div[2]/div/div/ul[1]/li')))
-                        time.sleep(0.5)
-                        paid_delievery_btn.click()
-                        time.sleep(0.5)
-                        free_shipping_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[2]/div[2]/div[2]/div/div/div[6]/div/div[1]/div/div[2]/div/div/ul[2]/li[1]/div')))
-                        time.sleep(0.5)
-                        free_shipping_btn.click()
-                        time.sleep(0.5)
-                        save_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[3]/div/button[2]')))
-                        time.sleep(0.5)
-                        save_btn.click()
-                        time.sleep(0.5)
-                        confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="container-wing-v2"]/div[3]/div[2]/div[6]/button[2]')))
-                        time.sleep(0.5)
-                        confirm_btn.click()
-                        time.sleep(1)
-                    table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table')))
-                    # Assuming the scrollable container is a direct parent of the table
-                    scrollable_container = table.find_element(By.XPATH, "./..")
-                    self.driver.execute_script(f'arguments[0].scrollTop = {640*(i+1)}', scrollable_container) # Scroll down the table for 640px
-        print(f"[+] Delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge} end.")
+                while True:
+                    counter = 0
+                    try:
+                        for i in range(40):
+                            print(f"i = {i} / start")
+                            time.sleep(0.5)
+                            shipping_edit_btn = WebDriverWait(self.driver, 2).until(EC.presence_of_element_located((By.XPATH, f"//*[@id='rootContainer']/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[{i+1}]/td[27]")))
+                            time.sleep(0.5)
+                            shipping_edit_btn.click()
+                            time.sleep(0.5)
+                            paid_delievery_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[2]/div[2]/div[2]/div/div/div[6]/div/div[1]/div/div[2]/div/div/ul[1]/li')))
+                            time.sleep(0.5)
+                            paid_delievery_btn.click()
+                            time.sleep(0.5)
+                            free_shipping_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[2]/div[2]/div[2]/div/div/div[6]/div/div[1]/div/div[2]/div/div/ul[2]/li[1]/div')))
+                            time.sleep(0.5)
+                            free_shipping_btn.click()
+                            time.sleep(0.5)
+                            save_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[3]/div/button[2]')))
+                            time.sleep(0.5)
+                            save_btn.click()
+                            time.sleep(0.5)
+                            confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="container-wing-v2"]/div/div/div[@class="alert-buttons"]/button[contains(@class, "confirm") and contains(@class, "alert-confirm")]')))
+                            time.sleep(0.5)
+                            confirm_btn.click()
+                            time.sleep(1)
+                            print(f"i ={i} / end")
+                    except Exception as e:
+                        self.driver.refresh()
+                        while True:
+                            try:
+                                print(" [*] Wait for the table loading...")
+                                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                                break
+                            except TimeoutException:
+                                counter += 1
+                                if counter == 3:
+                                    break
+                                print(" [*] Wait for the table loading...")
+                        if counter != 3:
+                            table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table')))
+                            # Assuming the scrollable container is a direct parent of the table
+                            scrollable_container = table.find_element(By.XPATH, "./..")
+                            scroll_script = "arguments[0].scrollLeft = 3200;"  # Adjust scrollLeft for 27th column
+                            self.driver.execute_script(scroll_script, scrollable_container)
+                        if counter ==3:
+                            break
+                print(f"[+] Delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge} end.")
     
     # Automate checking above the setted rate.
-    def product_checker(self, rate_lowering, max_num):
+    def product_checker(self, rate_lowering, max_num, is_margin_descend):
         counter = 0
         max_delivery_charge_list = []
         lowest_delivery_charge_list = []
-        # Set order of descending with margin
-        margin_descend_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="search_filter"]/tbody/tr/td[6]/div/a')))
-        margin_descend_btn.click()
+        if is_margin_descend:
+            # Set order of descending with margin
+            margin_descend_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="search_filter"]/tbody/tr/td[6]/div/a')))
+            margin_descend_btn.click()
         prd_view_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]')))
         prd_view_btn.click()
         view_200_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]/ul/li[3]')))

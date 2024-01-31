@@ -32,7 +32,7 @@ def set_default_text():
     smart_pw_entry.insert(0,"rq3.XW.NzXuaCc8")
     coupang_id_entry.insert(0,"voguesnack")
     coupang_pw_entry.insert(0,"9w_kPvtu8Qcj93u")
-    net_profit_ratio_entry.insert(0, "10")
+    net_profit_ratio_entry.insert(0, "5")
 
 def initialize_webdriver():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
@@ -108,7 +108,7 @@ def uploading_action():
                 EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',loginbtn2, False)
                 EdgeTool.popupHandler(3)
                 preprocesedSourced_df = pd.read_csv('preprocesedSourced.csv', encoding='utf-8-sig')
-                EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True)
+                EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True, is_margin_descend=False)
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted while uploading.\n"
@@ -139,7 +139,9 @@ def daily_sourcing_uploading_action():
                 if not isloggedin:
                     isloggedin = EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',loginbtn2, False)
                     EdgeTool.popupHandler(3)
-                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True)
+                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True, is_margin_descend=False)
+                delivery_charge_changing_action()
+                input("press enter to close the program.")
                 # return discount_rate_pricing_action() # If you want to use automize discount rate setting, turn on the line.
                 break
             except ElementClickInterceptedException:
@@ -176,6 +178,10 @@ def delivery_charge_changing_action():
 
 def discount_rate_pricing_action():
     isLoggedin = False
+    url = 'https://xauth.coupang.com/auth/realms/seller/protocol/openid-connect/auth?response_type=code&client_id=wing&redirect_uri=https%3A%2F%2Fwing.coupang.com%2Fsso%2Flogin?returnUrl%3D%252F&state=456c3cf5-a6dd-4f52-abe4-cd3364bad4e4&login=true&scope=openid'
+    usernameBox = 'username'
+    passwordBox = 'password'
+    loginbtn = '.cp-loginpage__form__submit'
     smart_id = smart_id_var.get()
     smart_pw = smart_pw_var.get()
     coupang_id = coupang_id_var.get()
@@ -186,7 +192,9 @@ def discount_rate_pricing_action():
                 # Start the pricing
                 if not isLoggedin:
                     isLoggedin = EdgeSourcing.login(url,smart_id,smart_pw,'id','pw',smart_login_btn, True)
+                    # isLoggedin = EdgeSourcing.login(url, coupang_id, coupang_pw, usernameBox, passwordBox, loginbtn, isNewTab=False)
                 EdgeTool.discountRateSetting('smart')
+                # EdgeTool.delivery_charge_changer('coupang',isDeliveryCharge=False)
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted. \n"
@@ -281,13 +289,15 @@ monthly_btn = tk.Button(root, text="Monthly Sourcing & Uploading", command=month
 webdriver_btn = tk.Button(root, text="Initialize WebDriver", command=initialize_webdriver)
 daily_btn = tk.Button(root, text="Daily Sourcing & Uploading", command=daily_sourcing_uploading_action)
 pricing_btn = tk.Button(root, text="Pricing", command=discount_rate_pricing_action)
+delivery_charge_changing_btn = tk.Button(root, text="DC Changing", command=delivery_charge_changing_action)
 
 webdriver_btn.pack()
 # sourcing_btn.pack()
 # uploading_btn.pack()
 monthly_btn.pack()
 daily_btn.pack()
-pricing_btn.pack()
+# pricing_btn.pack()
+delivery_charge_changing_btn.pack()
 
 # Creating and placing the result Text widget
 result_text = tk.Text(root, height=10, width=50)
