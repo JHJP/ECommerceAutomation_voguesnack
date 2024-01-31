@@ -12,10 +12,17 @@ url2 = "https://sellha.kr/discover"
 url3 = "https://www.onch3.co.kr/login/login_web.php"
 url4 = "https://www.onch3.co.kr/dbcenter_renewal/index.php"
 smart_url = "https://accounts.commerce.naver.com/login?url=https%3A%2F%2Fsell.smartstore.naver.com%2F%23%2Flogin-callback"
+coupang_url = 'https://xauth.coupang.com/auth/realms/seller/protocol/openid-connect/auth?response_type=code&client_id=wing&redirect_uri=https%3A%2F%2Fwing.coupang.com%2Fsso%2Flogin?returnUrl%3D%252F&state=456c3cf5-a6dd-4f52-abe4-cd3364bad4e4&login=true&scope=openid'
 naver_datalab_url = "https://datalab.naver.com/"
+onchan_prd_stat_url = "https://www.onch3.co.kr/admin_mem_clo_list_2.php?ost=&sec=&ol=&npage="
+coupang_prd_list_url = "https://wing.coupang.com/vendor-inventory/list?searchIds=&startTime=2000-01-01&endTime=2099-12-31&productName=&brandName=&manufacturerName=&productType=&autoPricingStatus=ALL&dateType=productRegistrationDate&dateRangeShowStyle=true&dateRange=all&saleEndDatePeriodType=&includeUsedProduct=&deleteType=false&deliveryMethod=&shippingType=&shipping=&otherType=&productStatus=SAVED,WAIT_FOR_SALE,VALID,SOLD_OUT,INVALID,END_FOR_SALE,APPROVING,IN_REVIEW,DENIED,PARTIAL_APPROVED,APPROVED,ALL&advanceConditionShow=false&displayCategoryCodes=&currentMenuCode=&rocketMerchantVersion=&registrationType=&upBundling=ALL&hasUpBundlingItem=&hasBadImage=false&page=1&countPerPage=50&sortField=vendorInventoryId&desc=true&fromListV2=true&locale=ko_KR&vendorItemViolationType=&coupangAttributeOptimized=FALSE&autoPricingActive="
+smart_prd_list_url = "https://sell.smartstore.naver.com/#/products/origin-list"
+
 loginbtn1 = '.sc-iAEyYk.loQZmZ'
-loginbtn2 = '.btn.btn-lg.btn-primary.btn-block'
+onchan_login_btn = '.btn.btn-lg.btn-primary.btn-block'
 smart_login_btn = 'ul.panel_wrap li.panel_item .panel_inner .btn_login_wrap .btn_login'
+coupang_loginbtn = '.cp-loginpage__form__submit'
+
 download_path = '/Users/papag/Downloads'
 file_prefix_all = "셀하 아이템 발굴 EXCEL_전체"
 file_prefix_editable = "스마트스토어상품"
@@ -105,7 +112,7 @@ def uploading_action():
                 smart_id = smart_id_var.get()
                 smart_pw = smart_pw_var.get()
                 # Move to the data center hompage and compare keywords if there is in the center or not.
-                EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',loginbtn2, False)
+                EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
                 EdgeTool.popupHandler(3)
                 preprocesedSourced_df = pd.read_csv('preprocesedSourced.csv', encoding='utf-8-sig')
                 EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True, is_margin_descend=False)
@@ -137,7 +144,7 @@ def daily_sourcing_uploading_action():
                 naver_sourced_df = EdgeSourcing.daily_sourcing()
                 naver_sourced_isEdited_df = EdgeSourcing.targetListMaker(naver_sourced_df, isDaily=True)
                 if not isloggedin:
-                    isloggedin = EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',loginbtn2, False)
+                    isloggedin = EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
                     EdgeTool.popupHandler(3)
                 EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True, is_margin_descend=False)
                 delivery_charge_changing_action()
@@ -154,19 +161,13 @@ def daily_sourcing_uploading_action():
 
 def delivery_charge_changing_action():
     isLoggedin = False
-    smart_id = smart_id_var.get()
-    smart_pw = smart_pw_var.get()
     coupang_id = coupang_id_var.get()
     coupang_pw = coupang_pw_var.get()
-    url = 'https://xauth.coupang.com/auth/realms/seller/protocol/openid-connect/auth?response_type=code&client_id=wing&redirect_uri=https%3A%2F%2Fwing.coupang.com%2Fsso%2Flogin?returnUrl%3D%252F&state=456c3cf5-a6dd-4f52-abe4-cd3364bad4e4&login=true&scope=openid'
-    usernameBox = 'username'
-    passwordBox = 'password'
-    loginbtn = '.cp-loginpage__form__submit'
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
     while True:
             try:
                 if not isLoggedin:
-                    isLoggedin = EdgeSourcing.login(url, coupang_id, coupang_pw, usernameBox, passwordBox, loginbtn, isNewTab=False)
+                    isLoggedin = EdgeSourcing.login(coupang_url, coupang_id, coupang_pw, 'username', 'password', coupang_loginbtn, isNewTab=False)
                 EdgeTool.delivery_charge_changer('coupang',isDeliveryCharge=False)
                 break
             except ElementClickInterceptedException:
@@ -178,7 +179,7 @@ def delivery_charge_changing_action():
 
 def discount_rate_pricing_action():
     isLoggedin = False
-    url = 'https://xauth.coupang.com/auth/realms/seller/protocol/openid-connect/auth?response_type=code&client_id=wing&redirect_uri=https%3A%2F%2Fwing.coupang.com%2Fsso%2Flogin?returnUrl%3D%252F&state=456c3cf5-a6dd-4f52-abe4-cd3364bad4e4&login=true&scope=openid'
+    coupang_url = 'https://xauth.coupang.com/auth/realms/seller/protocol/openid-connect/auth?response_type=code&client_id=wing&redirect_uri=https%3A%2F%2Fwing.coupang.com%2Fsso%2Flogin?returnUrl%3D%252F&state=456c3cf5-a6dd-4f52-abe4-cd3364bad4e4&login=true&scope=openid'
     usernameBox = 'username'
     passwordBox = 'password'
     loginbtn = '.cp-loginpage__form__submit'
@@ -201,6 +202,63 @@ def discount_rate_pricing_action():
                     EdgeTool.append_to_text_widget(message, "red")
                     print("[!] Element intercepted. Scroll down the page.")
                     EdgeTool.scroll_downer(250)
+
+def prd_stat_checking_action():
+    checking_phase_done = False
+    coupang_phase_done = False
+    smart_phase_done = False
+    smart_id = smart_id_var.get()
+    smart_pw = smart_pw_var.get()
+    coupang_id = coupang_id_var.get()
+    coupang_pw = coupang_pw_var.get()
+    onchan_id = id2_var.get()
+    onchan_pw = password2_var.get()
+    global driver, EdgeSourcing, EdgeUploading, EdgeTool
+    while True:
+        try:
+            if not checking_phase_done:
+                # Start the pricing
+                if not isLoggedin_onchan:
+                    # Move to the prodcut status page in onchan.
+                    isLoggedin_onchan = EdgeSourcing.login(url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
+                    EdgeTool.popupHandler(3)
+                    EdgeSourcing.pageNavigator(onchan_prd_stat_url)
+                    # Deleting or Suspending procedure.
+                    out_of_stock_prd_string, new_out_of_stock_temp_df = EdgeTool.out_of_stock_checker()
+                    checking_phase_done = True
+                elif isLoggedin_onchan:
+                    EdgeSourcing.pageNavigator(onchan_prd_stat_url)
+                    # Deleting or Suspending procedure.
+                    out_of_stock_prd_string, new_out_of_stock_temp_df = EdgeTool.out_of_stock_checker()
+                    checking_phase_done = True
+            # Coupang
+            if not coupang_phase_done:
+                if not isLoggedin_coupang:
+                    isLoggedin_coupang = EdgeSourcing.login(coupang_url, coupang_id, coupang_pw, 'username', 'password', coupang_loginbtn, isNewTab=False)
+                    EdgeSourcing.pageNavigator(coupang_prd_list_url)
+                    EdgeTool.out_of_stock_product_deleter('coupang', out_of_stock_prd_string, new_out_of_stock_temp_df)
+                    coupang_phase_done = True
+                elif isLoggedin_coupang:
+                    EdgeSourcing.pageNavigator(coupang_prd_list_url)
+                    EdgeTool.out_of_stock_product_deleter('coupang', out_of_stock_prd_string, new_out_of_stock_temp_df)
+                    coupang_phase_done = True
+            # Smart
+            if not smart_phase_done:
+                if not isLoggedin_smart:
+                    isLoggedin_smart = EdgeSourcing.login(url,smart_id,smart_pw,'id','pw',smart_login_btn, True)
+                    EdgeSourcing.pageNavigator(smart_prd_list_url)
+                    EdgeTool.out_of_stock_product_deleter('smart', out_of_stock_prd_string, new_out_of_stock_temp_df)
+                    smart_phase_done = True
+                elif isLoggedin_smart:
+                    EdgeSourcing.pageNavigator(smart_prd_list_url)
+                    EdgeTool.out_of_stock_product_deleter('smart', out_of_stock_prd_string, new_out_of_stock_temp_df)
+                    smart_phase_done = True
+            break
+        except ElementClickInterceptedException:
+                message = "[!] Element intercepted. \n"
+                EdgeTool.append_to_text_widget(message, "red")
+                print("[!] Element intercepted. Scroll down the page.")
+                EdgeTool.scroll_downer(250)
 
 # Initialize the main window
 root = tk.Tk()
@@ -290,6 +348,7 @@ webdriver_btn = tk.Button(root, text="Initialize WebDriver", command=initialize_
 daily_btn = tk.Button(root, text="Daily Sourcing & Uploading", command=daily_sourcing_uploading_action)
 pricing_btn = tk.Button(root, text="Pricing", command=discount_rate_pricing_action)
 delivery_charge_changing_btn = tk.Button(root, text="DC Changing", command=delivery_charge_changing_action)
+prd_stat_checking_btn = tk.Button(root, text="DC Changing", command=prd_stat_checking_action)
 
 webdriver_btn.pack()
 # sourcing_btn.pack()
@@ -298,6 +357,7 @@ monthly_btn.pack()
 daily_btn.pack()
 # pricing_btn.pack()
 delivery_charge_changing_btn.pack()
+prd_stat_checking_btn.pack()
 
 # Creating and placing the result Text widget
 result_text = tk.Text(root, height=10, width=50)

@@ -111,9 +111,8 @@ class Sourcing:
             self.tool.append_to_text_widget(message, "red")
         else:
             print("[+] Download button clicked successfully")
-        
 
-    def downloadChecker(self, download_path, file_prefix, first_phase):
+    def downloadChecker(download_path, file_prefix, first_phase):
         counter = 0
         while True:
             time.sleep(3)
@@ -142,9 +141,19 @@ class Sourcing:
                         # Concatenate all DataFrames from each sheet into one DataFrame
                         df = pd.concat(dictionary, ignore_index=True)
                         print(f"[+] {file_prefix} read successfully.")
-                    except ValueError:
-                        df = pd.read_csv(file_to_check, encoding='utf-8')
-                        print(f"[+] {file_prefix} read successfully.")
+                    except Exception as e:
+                        try:
+                            # print(e)
+                            df = pd.read_csv(file_to_check, encoding='utf-8')
+                            print(f"[+] {file_prefix} read successfully.")
+                        except Exception as e:
+                            # print(e)
+                            try:
+                                tables = pd.read_html(file_to_check)
+                                df = tables[0]
+                            except Exception as e:
+                                # print(e)
+                                input("Error occur while reading the file.")
                     # You can now work with the 'df' DataFrame.
                     return df
                 
@@ -614,6 +623,124 @@ class Tool:
         self.sourcing = sourcing or Sourcing(driver)
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
+
+    def out_of_stock_checker(self):
+        # Assume that we are in the onchan out of stock page.
+        checkboxes = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@type="checkbox"]')))
+        if len(checkboxes) <= 1:
+            print("Out of stock products no exist.")
+            return 
+        check_out_of_stock_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/a[2]/button')))
+        check_out_of_stock_btn.click()
+        select_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/input')))
+        select_all_btn.click()
+        excel_download_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/a[1]/button')))
+        excel_download_btn.click()
+        # Read downloaded out of stock product list file
+        out_of_stock_df = self.sourcing.downloadChecker('/Users/papag/Downloads', "excel_downdload", first_phase=False)
+        # Preprocessing
+        new_header = out_of_stock_df.iloc[0]  # Grab the first row for the header
+        new_out_of_stock_df = out_of_stock_df[1:]
+        new_out_of_stock_df.columns = new_header  # Set the header row as the df header
+        new_out_of_stock_df = new_out_of_stock_df.loc[new_out_of_stock_df['분류'].isin(['단종', '품절'])] # Grab the 상품코드 which 분류 is 단종 or 품절
+        new_out_of_stock_df.drop_duplicates(subset='상품코드', inplace=True)
+        new_out_of_stock_temp_df = new_out_of_stock_df.loc[new_out_of_stock_df['분류'].isin(['일시품절'])] # Grab the 상품코드 which 분류 is 단종 or 품절
+        new_out_of_stock_temp_df.drop_duplicates(subset='상품코드', inplace=True)
+        # Sending the out of stock prd codes to coupang and smartstre and delete them.
+        if len(new_out_of_stock_df) != 0:
+            product_codes = new_out_of_stock_df['상품코드'].astype(str).tolist()
+            out_of_stock_prd_string = ','.join(product_codes)
+        elif len(new_out_of_stock_df) == 0:
+            out_of_stock_prd_string = "Empty"
+        if len(new_out_of_stock_temp_df) != 0:
+            product_codes_temp = new_out_of_stock_temp_df['상품코드'].astype(str).tolist()
+            out_of_stock_prd_string = ','.join(product_codes_temp)
+        elif len(new_out_of_stock_temp_df) == 0:
+            new_out_of_stock_temp_df = "Empty"
+        return out_of_stock_prd_string, new_out_of_stock_temp_df
+    
+    def out_of_stock_product_deleter(self, store_name, out_of_stock_prd_string, new_out_of_stock_temp_df):
+            # Open the new tab in selenium and switch to the tab
+        # original_tab = self.driver.current_window_handle
+        # self.driver.execute_script("window.open('');")
+        # new_tab = [tab for tab in self.driver.window_handles if tab != original_tab][0]
+        # self.driver.switch_to.window(new_tab)
+            # coupang: Assume that we successfully navigate to the product list in the coupang wing
+        if store_name == 'coupang':
+            if out_of_stock_prd_string != "Empty":
+                coupang_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[1]/span/span[2]/textarea')))
+                coupang_input_box.send_keys(out_of_stock_prd_string)
+                coupang_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[2]/dd/button[2]')))
+                coupang_search_btn.click()
+                coupang_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
+                if coupang_searched_num.text != "0":
+                    coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
+                    coupang_check_all_btn.click()
+                    coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/button[3]')))
+                    coupang_delete_btn.click()
+                    coupang_confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="container-wing-v2"]/div[2]/div[2]/div[6]/button[2]')))
+                    coupang_confirm_btn.click()
+                    message_coupang_out_of_stock = "Coupang(out of stock): item deleted."
+                else:
+                    message_coupang_out_of_stock = "Coupang(out of stock): Item not found."
+            if new_out_of_stock_temp_df != "Empty":
+                coupang_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[1]/span/span[2]/textarea')))
+                coupang_input_box.clear()
+                coupang_input_box.send_keys(new_out_of_stock_temp_df)
+                coupang_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[2]/dd/button[2]')))
+                coupang_search_btn.click()
+                coupang_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
+                if coupang_searched_num.text != "0":
+                    coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
+                    coupang_check_all_btn.click()
+                    coupang_change_stat_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/div[2]/div/ul[1]/li')))
+                    coupang_change_stat_btn.click()
+                    coupang_suspend_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/div[2]/div/ul[2]/li[3]/div/div')))
+                    coupang_suspend_btn.click()
+                    message_coupang_temp = "Coupang(temporally): item suspended."
+                else:
+                    message_coupang_temp = "Coupang(temporally): Item not found."
+        if store_name == 'smart':
+            if out_of_stock_prd_string != "Empty":
+                smart_seller_prd_code_check = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[1]/div/div[2]/label')))
+                smart_seller_prd_code_check.click()
+                smart_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[2]/textarea')))
+                smart_input_box.send_keys(out_of_stock_prd_string)
+                smart_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[2]/div/button[1]')))
+                smart_search_btn.click()
+                smart_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[1]/h3/span')))
+                if smart_searched_num.text != "0":
+                    smart_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[1]/div[1]/div/div[1]/div[2]/div/label/span')))
+                    smart_check_all_btn.click()
+                    smart_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[1]/div[1]/div/div[1]/button')))
+                    smart_delete_btn.click()
+                    smart_confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div/div/div[2]/div/span[2]/button')))
+                    smart_confirm_btn.click()
+                    message_smart_out_of_stock = "Smart(out of stock): item deleted."
+                else:
+                    message_smart_out_of_stock = "Smart(out of stock): Item not found."
+            if new_out_of_stock_temp_df != "Empty":
+                smart_seller_prd_code_check = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[1]/div/div[2]/label')))
+                smart_seller_prd_code_check.click()
+                smart_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[2]/textarea')))
+                smart_input_box.clear()
+                smart_input_box.send_keys(out_of_stock_prd_string)
+                smart_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[2]/div/button[1]')))
+                smart_search_btn.click()
+                smart_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[1]/h3/span')))
+                if smart_searched_num.text != "0":
+                    smart_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[1]/div[1]/div/div[1]/div[2]/div/label/span')))
+                    smart_check_all_btn.click()
+                    smart_change_stat_dropbox = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[1]/div[1]/div/div[2]/div[2]/div[1]')))
+                    smart_change_stat_dropbox.click()
+                    smart_suspend_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[1]/div[1]/div/div[2]/div[1]/div[2]/div/div[3]')))
+                    smart_suspend_btn.click()
+                    smart_confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div/div/div[2]/div/span[2]/button')))
+                    smart_confirm_btn.click()
+                    message_smart_temp = "Smart(temporally): Item deleted."
+                else:
+                    message_smart_temp = "Smart(temporally): Item not found."
+            return message_coupang_out_of_stock, message_coupang_temp, message_smart_out_of_stock, message_smart_temp
 
     def delivery_charge_changer(self,storename, isDeliveryCharge):
         print(f"[+] Start delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge}")
