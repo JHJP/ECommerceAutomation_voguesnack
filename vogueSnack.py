@@ -10,33 +10,33 @@ from selenium.common.exceptions import NoSuchElementException, NoAlertPresentExc
 from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.keys import Keys
 import tkinter as tk
-from tkinter import messagebox
-import sys
-import pyperclip
 import re
+import tkinter.messagebox as messagebox   # Import the function from shared.py
 
 class Sourcing:
     def __init__(self, driver, tool=None):
         self.driver = driver
         self.tool = tool
 
-    def login(self, url, id, password, usernameBox, passwordBox, loginbtn, isNewTab):
+    def login(self, store_name, url, id, password, usernameBox, passwordBox, loginbtn, authPhase):
         isLoggedin = False
-        if not isNewTab:
+        if not authPhase:
             self.driver.get(url)
         else:
-            print("[+] Move to the opend tab.")
-            smart_url = 'https://accounts.commerce.naver.com/login?url=https%3A%2F%2Fsell.smartstore.naver.com%2F%23%2Flogin-callback'
-            # Move to the data center hompage and compare keywords if there is in the center or not.
-            self.pageNavigator(smart_url)
-            time.sleep(5)
-            self.driver.find_element(By.XPATH, '//*[@id="root"]/div/div[1]/div/div/div[4]/div[1]/ul/li[2]/button').click()
-            time.sleep(5)
-            # move to the opend window
-            windows = self.driver.window_handles
-            smart_login_windows = windows[1]
-            self.driver.switch_to.window(smart_login_windows)
-            print("[+] Move to the opened tab successful.")
+            if store_name == 'smart':
+                print("[+] Move to the opend tab.")
+                self.driver.get(url)
+                # self.pageNavigator(url)
+                time.sleep(5)
+                self.driver.find_element(By.XPATH, '//*[@id="root"]/div/div[1]/div/div/div[4]/div[1]/ul/li[2]/button').click()
+                time.sleep(5)
+                # move to the opend window
+                windows = self.driver.window_handles
+                smart_login_windows = windows[1]
+                self.driver.switch_to.window(smart_login_windows)
+                print("[+] Move to the opened tab successful.")
+            if store_name == 'coupang':
+                self.driver.get(url)
         self.driver.find_element(By.NAME, usernameBox).send_keys(id)
         self.driver.find_element(By.NAME, passwordBox).send_keys(password)
         self.driver.find_element(By.CSS_SELECTOR, loginbtn).click() # use CSS_SELECTOR to change class name format. Because there are spaces on class name, which means not a single class.
@@ -45,13 +45,15 @@ class Sourcing:
             lambda x: x.execute_script("return document.readyState === 'complete'")
         )
         isLoggedin = True
-        if isNewTab:
-            input(f"Process? password: {password}")
+        if authPhase:
+            input(f"Process? id: {id}, password: {password}")
             print("[+] Login successful")
             isLoggedin = True
             time.sleep(5)
-            self.driver.switch_to.window(windows[0])
-            return isLoggedin
+            if store_name =='smart':
+                self.driver.switch_to.window(windows[0])
+
+        return isLoggedin
             
     def pageNavigator(self, url):
         self.driver.get(url)
@@ -112,7 +114,7 @@ class Sourcing:
         else:
             print("[+] Download button clicked successfully")
 
-    def downloadChecker(download_path, file_prefix, first_phase):
+    def downloadChecker(self, download_path, file_prefix, first_phase):
         counter = 0
         while True:
             time.sleep(3)
@@ -518,7 +520,7 @@ class Uploading:
             df_discount.to_csv("smart_discount_rate_daily.csv", encoding='utf-8-sig' , index = False)
         sendBtn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"//button[contains(@class, '{store_name}_modi_btn')]")))
         sendBtn.click()
-        self.tool.popupHandler(100)
+        self.tool.popupHandler(100, store_name)
         print("[+] Sending to store end." )
 
     def keywordCompare(self, preprocessed_df, net_profit_ratio, isDaily, discount_rate_calculation, isDeliveryCharge_coupang, isDeliveryCharge_smart, is_margin_descend):
@@ -624,11 +626,27 @@ class Tool:
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
 
+    def out_of_stock_finisher(self):
+        # Assume that we are in the onchan out of stock page.
+        checkboxes = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@type="checkbox"]')))
+        if len(checkboxes) <= 1:
+            print("[+] Finisher: Out of stock products no exist.")
+            return 
+        check_out_of_stock_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/a[2]/button')))
+        check_out_of_stock_btn.click()
+        select_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/input')))
+        select_all_btn.click()
+        select_del_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/a[@class="btn_sel_del"]')))
+        select_del_btn.click()
+        self.popupHandler(5, 'onchan')
+        self.popupHandler(5, 'onchan')
+        print("[+] Finisher: Handling out of stock products finish.")
+        
     def out_of_stock_checker(self):
         # Assume that we are in the onchan out of stock page.
         checkboxes = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@type="checkbox"]')))
         if len(checkboxes) <= 1:
-            print("Out of stock products no exist.")
+            print("[+] Deleter: Out of stock products no exist.")
             return 
         check_out_of_stock_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/a[2]/button')))
         check_out_of_stock_btn.click()
@@ -636,6 +654,7 @@ class Tool:
         select_all_btn.click()
         excel_download_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/a[1]/button')))
         excel_download_btn.click()
+        self.popupHandler(5, 'onchan')
         # Read downloaded out of stock product list file
         out_of_stock_df = self.sourcing.downloadChecker('/Users/papag/Downloads', "excel_downdload", first_phase=False)
         # Preprocessing
@@ -654,11 +673,29 @@ class Tool:
             out_of_stock_prd_string = "Empty"
         if len(new_out_of_stock_temp_df) != 0:
             product_codes_temp = new_out_of_stock_temp_df['상품코드'].astype(str).tolist()
-            out_of_stock_prd_string = ','.join(product_codes_temp)
+            out_of_stock_prd_temp_string = ','.join(product_codes_temp)
         elif len(new_out_of_stock_temp_df) == 0:
-            new_out_of_stock_temp_df = "Empty"
-        return out_of_stock_prd_string, new_out_of_stock_temp_df
+            out_of_stock_prd_temp_string = "Empty"
+        return out_of_stock_prd_string, out_of_stock_prd_temp_string
     
+    def delete_suspend_confirmator(self, store_name, delete_suspend_btn):
+    # Check user confirmation before proceeding
+        user_response = messagebox.askyesno("Confirmation", "Proceed?")
+        if user_response:
+            delete_suspend_btn.click()
+            if store_name == 'coupang':
+                coupang_confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="container-wing-v2"]/div/div/div[@class="alert-buttons"]/button[contains(@class, "confirm") and contains(@class, "alert-confirm")]')))
+                time.sleep(0.5)
+                coupang_confirm_btn.click()
+                return "Done"
+            if store_name == 'smart':
+                smart_confirm_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div/div[@class="modal-content"]/div/div/span/button[contains(@class, "btn") and contains(@class, "btn-primary")]'))) 
+                time.sleep(0.5)
+                smart_confirm_btn.click()
+                return "Done"
+        elif not user_response:
+            return "Cancelled"
+
     def out_of_stock_product_deleter(self, store_name, out_of_stock_prd_string, new_out_of_stock_temp_df):
             # Open the new tab in selenium and switch to the tab
         # original_tab = self.driver.current_window_handle
@@ -671,76 +708,94 @@ class Tool:
                 coupang_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[1]/span/span[2]/textarea')))
                 coupang_input_box.send_keys(out_of_stock_prd_string)
                 coupang_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[2]/dd/button[2]')))
+                time.sleep(1.5)
                 coupang_search_btn.click()
+                time.sleep(1.5)
                 coupang_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
                 if coupang_searched_num.text != "0":
                     coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
+                    time.sleep(0.5)
                     coupang_check_all_btn.click()
                     coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/button[3]')))
-                    coupang_delete_btn.click()
-                    coupang_confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="container-wing-v2"]/div[2]/div[2]/div[6]/button[2]')))
-                    coupang_confirm_btn.click()
-                    message_coupang_out_of_stock = "Coupang(out of stock): item deleted."
+                    result = self.delete_suspend_confirmator('coupang',coupang_delete_btn)
+                    message_coupang_out_of_stock = f"Coupang(out of stock): item deletion {result}."
                 else:
                     message_coupang_out_of_stock = "Coupang(out of stock): Item not found."
+                print(message_coupang_out_of_stock)
             if new_out_of_stock_temp_df != "Empty":
                 coupang_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[1]/span/span[2]/textarea')))
+                time.sleep(0.5)
                 coupang_input_box.clear()
+                time.sleep(0.5)
                 coupang_input_box.send_keys(new_out_of_stock_temp_df)
                 coupang_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[2]/dd/button[2]')))
+                time.sleep(0.5)
                 coupang_search_btn.click()
                 coupang_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
+                time.sleep(0.5)
                 if coupang_searched_num.text != "0":
                     coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
+                    time.sleep(0.5)
                     coupang_check_all_btn.click()
                     coupang_change_stat_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/div[2]/div/ul[1]/li')))
+                    time.sleep(0.5)
                     coupang_change_stat_btn.click()
                     coupang_suspend_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/div[2]/div/ul[2]/li[3]/div/div')))
-                    coupang_suspend_btn.click()
-                    message_coupang_temp = "Coupang(temporally): item suspended."
+                    result = self.delete_suspend_confirmator('coupang',coupang_suspend_btn)
+                    message_coupang_temp = f"Coupang(temporally): item suspention {result}."
                 else:
                     message_coupang_temp = "Coupang(temporally): Item not found."
+                print(message_coupang_temp)
+        
         if store_name == 'smart':
             if out_of_stock_prd_string != "Empty":
-                smart_seller_prd_code_check = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[1]/div/div[2]/label')))
+                smart_seller_prd_code_check = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[1]/div/div[2]/label/span')))
+                time.sleep(0.5)
                 smart_seller_prd_code_check.click()
                 smart_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[2]/textarea')))
+                time.sleep(0.5)
                 smart_input_box.send_keys(out_of_stock_prd_string)
                 smart_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[2]/div/button[1]')))
+                time.sleep(0.5)
                 smart_search_btn.click()
+                time.sleep(1.5)
                 smart_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[1]/h3/span')))
                 if smart_searched_num.text != "0":
                     smart_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[1]/div[1]/div/div[1]/div[2]/div/label/span')))
+                    time.sleep(0.5)
                     smart_check_all_btn.click()
                     smart_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[1]/div[1]/div/div[1]/button')))
-                    smart_delete_btn.click()
-                    smart_confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div/div/div[2]/div/span[2]/button')))
-                    smart_confirm_btn.click()
-                    message_smart_out_of_stock = "Smart(out of stock): item deleted."
+                    result = self.delete_suspend_confirmator('smart',smart_delete_btn)
+                    message_smart_out_of_stock = f"Smart(out of stock): item deletion {result}."
                 else:
                     message_smart_out_of_stock = "Smart(out of stock): Item not found."
+                print(message_smart_out_of_stock)
             if new_out_of_stock_temp_df != "Empty":
                 smart_seller_prd_code_check = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[1]/div/div[2]/label')))
+                time.sleep(0.5)
                 smart_seller_prd_code_check.click()
                 smart_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[2]/textarea')))
+                time.sleep(0.5)
                 smart_input_box.clear()
+                time.sleep(0.5)
                 smart_input_box.send_keys(out_of_stock_prd_string)
                 smart_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[2]/div/button[1]')))
+                time.sleep(0.5)
                 smart_search_btn.click()
                 smart_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[1]/h3/span')))
                 if smart_searched_num.text != "0":
                     smart_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[1]/div[1]/div/div[1]/div[2]/div/label/span')))
+                    time.sleep(0.5)
                     smart_check_all_btn.click()
                     smart_change_stat_dropbox = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[1]/div[1]/div/div[2]/div[2]/div[1]')))
+                    time.sleep(0.5)
                     smart_change_stat_dropbox.click()
                     smart_suspend_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[1]/div[1]/div/div[2]/div[1]/div[2]/div/div[3]')))
-                    smart_suspend_btn.click()
-                    smart_confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[2]/div/div/div[2]/div/span[2]/button')))
-                    smart_confirm_btn.click()
-                    message_smart_temp = "Smart(temporally): Item deleted."
+                    result = self.delete_suspend_confirmator('smart',smart_suspend_btn)
+                    message_smart_temp = f"Smart(temporally): Item suspension {result}."
                 else:
                     message_smart_temp = "Smart(temporally): Item not found."
-            return message_coupang_out_of_stock, message_coupang_temp, message_smart_out_of_stock, message_smart_temp
+                print(message_smart_temp)
 
     def delivery_charge_changer(self,storename, isDeliveryCharge):
         print(f"[+] Start delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge}")
@@ -911,7 +966,7 @@ class Tool:
         # Method to append text to the Text widget in gui.py
         self.result_text.insert(tk.END, message, tag)
 
-    def popupHandler(self, waitTime):
+    def popupHandler(self, waitTime, store_name):
         counter = 0
         while counter < waitTime + 1:
             # Handling JavaScript Alert Pop-Up
@@ -928,10 +983,15 @@ class Tool:
             
         # Handling Web Page Pop-Up
         try:
-            # Sellha close button.
-            close_button = self.driver.find_element(By.XPATH, "/html/body/div[3]/div/div[2]/div/div[2]/div[2]/button")
-            close_button.click()
-            print(" [*] Web page pop-up closed")
+            if store_name == 'sellha':
+                # Sellha close button.
+                close_button = self.driver.find_element(By.XPATH, "/html/body/div[3]/div/div[2]/div/div[2]/div[2]/button")
+                close_button.click()
+                print(" [*] Sellha: Web page pop-up closed")
+            if store_name == 'smart':
+                close_button = self.driver.find_element(By.XPATH, "//*[@class='modal-dialog']/div/div/ncp-manager-notice-view/ng-transclude/button[@class='close']/span")
+                close_button.click()
+                print(" [*] Smart: Web page pop-up closed")
         except NoSuchElementException:
             print(" [*] No web page pop-up present")
     
