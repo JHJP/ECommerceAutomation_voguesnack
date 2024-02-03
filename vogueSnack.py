@@ -46,8 +46,9 @@ class Sourcing:
         )
         isLoggedin = True
         if authPhase:
-            input(f"Process? id: {id}, password: {password}")
-            print("[+] Login successful")
+            print(" [*] Login process start.")
+            input(f" [*] Process? id: {id}, password: {password}")
+            print(" [*] Login successful")
             isLoggedin = True
             time.sleep(5)
             if store_name =='smart':
@@ -136,26 +137,30 @@ class Sourcing:
                     return True
                 # Construct the full path to the first matching file
                 file_to_check = os.path.join(download_path, matching_files[0])
+                file_extension = os.path.splitext(file_to_check)[1]
                 if os.path.isfile(file_to_check):
                     # Assuming it's an Excel file, you can read it into a Pandas DataFrame
                     try:
                         dictionary = pd.read_excel(file_to_check, sheet_name=None)
                         # Concatenate all DataFrames from each sheet into one DataFrame
                         df = pd.concat(dictionary, ignore_index=True)
-                        print(f"[+] {file_prefix} read successfully.")
+                        print(f"[+] {file_prefix} read with excel successfully.")
                     except Exception as e:
-                        try:
-                            # print(e)
-                            df = pd.read_csv(file_to_check, encoding='utf-8')
-                            print(f"[+] {file_prefix} read successfully.")
-                        except Exception as e:
-                            # print(e)
+                        if file_extension.lower() == '.csv':
+                            try:
+                                print(e)
+                                df = pd.read_csv(file_to_check, encoding='utf-8')
+                                print(f"[+] {file_prefix} read with csv successfully.")
+                            except Exception as e:
+                                print(e)
+                        else:
                             try:
                                 tables = pd.read_html(file_to_check)
                                 df = tables[0]
+                                print(f"[+] {file_prefix} read with html successfully.")
                             except Exception as e:
-                                # print(e)
-                                input("Error occur while reading the file.")
+                                print(e)
+                                input("Error occur while read the file.")
                     # You can now work with the 'df' DataFrame.
                     return df
                 
@@ -504,7 +509,7 @@ class Uploading:
                     done_btn.click()
                     i += 1
                     break
-        print(f"Sending to {store_name}...")
+        print(f" [*] Sending to {store_name}...")
         if discount_rate_calculation == True:
             # Check for the existing smart_discount_rate_daily
             files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
@@ -626,6 +631,39 @@ class Tool:
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
 
+    def order_gathering_handler(self, store_name):
+        print(f"[+] Gathering order from {store_name} start.")
+        gathering_order_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "/html/body/center/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td[@class='pg_btn']/a[@class = 'order_btn']")))
+        time.sleep(0.5)
+        gathering_order_btn.click()
+        self.popupHandler(3, 'onchan')
+        self.popupHandler(100, 'onchan')
+        checkboxes = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@class="order_table"]/tbody/tr/td/input[@type="checkbox"]')))
+        if len(checkboxes) < 2:
+            print(" [*] No orders received")
+            print(f"[+] Gathering order from {store_name} end.")
+            return
+        select_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "/html/body/center/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/table[@class='order_table']/tbody/tr/td[@class='ocheck comp']/input[@type='checkbox']")))
+        time.sleep(0.5)
+        select_all_btn.click()
+        order_send_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "/html/body/center/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/table[@class='order_table']/tbody/tr/td[@class='pg_btn']/a[@class='order_send_btn']")))
+        time.sleep(0.5)
+        order_send_btn.click()
+        self.popupHandler(3, 'onchan')
+        self.driver.switch_to.window(self.driver.window_handles[1])
+        order_send_point_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@id='order_send_btn']")))
+        order_send_point_btn.click()
+        alert_text = self.popupHandler(3, 'onchan')
+        if "부족합니다" in alert_text:
+            point_recharge_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "/html/body/div/ul/li/p/a/button[@class='pnt_charge_btn']")))
+            point_recharge_btn.click()
+            print(" [*] Recharge the point and try again.")
+            return
+        self.driver.switch_to.window(self.driver.window_handles[0])
+        confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@class='order_lightbox']/div[@class='order_complete_box modal']/div[@class='modal_btn_wrap']/a[@class='confirm_btn']")))
+        confirm_btn.click()
+        print(f"[+] Gathering order from {store_name} end.")
+        
     def out_of_stock_finisher(self):
         # Assume that we are in the onchan out of stock page.
         checkboxes = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@type="checkbox"]')))
@@ -659,11 +697,11 @@ class Tool:
         out_of_stock_df = self.sourcing.downloadChecker('/Users/papag/Downloads', "excel_downdload", first_phase=False)
         # Preprocessing
         new_header = out_of_stock_df.iloc[0]  # Grab the first row for the header
-        new_out_of_stock_df = out_of_stock_df[1:]
-        new_out_of_stock_df.columns = new_header  # Set the header row as the df header
-        new_out_of_stock_df = new_out_of_stock_df.loc[new_out_of_stock_df['분류'].isin(['단종', '품절'])] # Grab the 상품코드 which 분류 is 단종 or 품절
+        out_of_stock_df = out_of_stock_df[1:]
+        out_of_stock_df.columns = new_header  # Set the header row as the df header
+        new_out_of_stock_df = out_of_stock_df.loc[out_of_stock_df['분류'].isin(['단종', '품절'])] # Grab the 상품코드 which 분류 is 단종 or 품절
         new_out_of_stock_df.drop_duplicates(subset='상품코드', inplace=True)
-        new_out_of_stock_temp_df = new_out_of_stock_df.loc[new_out_of_stock_df['분류'].isin(['일시품절'])] # Grab the 상품코드 which 분류 is 단종 or 품절
+        new_out_of_stock_temp_df = out_of_stock_df.loc[out_of_stock_df['분류'].isin(['일시품절'])] # Grab the 상품코드 which 분류 is 단종 or 품절
         new_out_of_stock_temp_df.drop_duplicates(subset='상품코드', inplace=True)
         # Sending the out of stock prd codes to coupang and smartstre and delete them.
         if len(new_out_of_stock_df) != 0:
@@ -710,7 +748,18 @@ class Tool:
                 coupang_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[2]/dd/button[2]')))
                 time.sleep(1.5)
                 coupang_search_btn.click()
-                time.sleep(1.5)
+                counter = 0
+                while True:
+                    try:
+                        print(" [*] Wait for the table loading...")
+                        WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                        print(" [*] Table loaded successfully.")
+                        break
+                    except Exception:
+                        counter += 1
+                        if counter >= 2:
+                            print(" [*] Ther are no result.")
+                            break
                 coupang_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
                 if coupang_searched_num.text != "0":
                     coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
@@ -731,6 +780,18 @@ class Tool:
                 coupang_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[2]/dd/button[2]')))
                 time.sleep(0.5)
                 coupang_search_btn.click()
+                counter = 0
+                while True:
+                    try:
+                        print(" [*] Wait for the table loading...")
+                        WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                        print(" [*] Table loaded successfully.")
+                        break
+                    except Exception:
+                        counter += 1
+                        if counter >= 2:
+                            print(" [*] Ther are no result.")
+                            break
                 coupang_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
                 time.sleep(0.5)
                 if coupang_searched_num.text != "0":
@@ -758,7 +819,18 @@ class Tool:
                 smart_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[2]/div/button[1]')))
                 time.sleep(0.5)
                 smart_search_btn.click()
-                time.sleep(1.5)
+                counter = 0
+                while True:
+                    try:
+                        print(" [*] Wait for the table loading...")
+                        WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div/ui-view/div/div/div/div/div/div/div/div/div/div[@row-index="0"]/div/div[@class="ag-cell-wrapper"]')))
+                        print(" [*] Table loaded successfully.")
+                        break
+                    except Exception:
+                        counter += 1
+                        if counter >= 2:
+                            print(" [*] Ther are no result.")
+                            break
                 smart_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[1]/h3/span')))
                 if smart_searched_num.text != "0":
                     smart_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[1]/div[1]/div/div[1]/div[2]/div/label/span')))
@@ -778,16 +850,28 @@ class Tool:
                 time.sleep(0.5)
                 smart_input_box.clear()
                 time.sleep(0.5)
-                smart_input_box.send_keys(out_of_stock_prd_string)
+                smart_input_box.send_keys(new_out_of_stock_temp_df)
                 smart_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[2]/div/button[1]')))
                 time.sleep(0.5)
                 smart_search_btn.click()
+                counter = 0
+                while True:
+                    try:
+                        print(" [*] Wait for the table loading...")
+                        WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div/ui-view/div/div/div/div/div/div/div/div/div/div[@row-index="0"]/div/div[@class="ag-cell-wrapper"]')))
+                        print(" [*] Table loaded successfully.")
+                        break
+                    except Exception:
+                        counter += 1
+                        if counter >= 2:
+                            print(" [*] Ther are no result.")
+                            break
                 smart_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[1]/h3/span')))
                 if smart_searched_num.text != "0":
                     smart_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[1]/div[1]/div/div[1]/div[2]/div/label/span')))
                     time.sleep(0.5)
                     smart_check_all_btn.click()
-                    smart_change_stat_dropbox = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[1]/div[1]/div/div[2]/div[2]/div[1]')))
+                    smart_change_stat_dropbox = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[1]/div[1]/div/div[2]/div[1]/div[1]')))
                     time.sleep(0.5)
                     smart_change_stat_dropbox.click()
                     smart_suspend_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[1]/div[1]/div/div[2]/div[1]/div[2]/div/div[3]')))
@@ -835,10 +919,12 @@ class Tool:
                     try:
                         print(" [*] Wait for the table loading...")
                         WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                        print(" [*] Table loaded successfully.")
                         break
                     except TimeoutException:
                         print(" [*] Wait for the table loading...")
                 table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table')))
+                coupang_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
                 # Assuming the scrollable container is a direct parent of the table
                 scrollable_container = table.find_element(By.XPATH, "./..")
                 scroll_script = "arguments[0].scrollLeft = 3200;"  # Adjust scrollLeft for 27th column
@@ -847,7 +933,7 @@ class Tool:
                     counter = 0
                     try:
                         for i in range(40):
-                            print(f"i = {i} / start")
+                            print(f"{i}/{coupang_searched_num}")
                             time.sleep(0.5)
                             shipping_edit_btn = WebDriverWait(self.driver, 2).until(EC.presence_of_element_located((By.XPATH, f"//*[@id='rootContainer']/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[{i+1}]/td[27]")))
                             time.sleep(0.5)
@@ -869,13 +955,13 @@ class Tool:
                             time.sleep(0.5)
                             confirm_btn.click()
                             time.sleep(1)
-                            print(f"i ={i} / end")
                     except Exception as e:
                         self.driver.refresh()
                         while True:
                             try:
                                 print(" [*] Wait for the table loading...")
                                 WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                                print(" [*] Table loaded successfully.")
                                 break
                             except TimeoutException:
                                 counter += 1
@@ -982,18 +1068,31 @@ class Tool:
                 counter += 1
             
         # Handling Web Page Pop-Up
-        try:
-            if store_name == 'sellha':
-                # Sellha close button.
+        if store_name == 'sellha':
+            try:
                 close_button = self.driver.find_element(By.XPATH, "/html/body/div[3]/div/div[2]/div/div[2]/div[2]/button")
                 close_button.click()
                 print(" [*] Sellha: Web page pop-up closed")
-            if store_name == 'smart':
+            except Exception:
+                print(" [*] Sellha: No Web page pop-up")
+        if store_name == 'smart':
+            try:
                 close_button = self.driver.find_element(By.XPATH, "//*[@class='modal-dialog']/div/div/ncp-manager-notice-view/ng-transclude/button[@class='close']/span")
                 close_button.click()
                 print(" [*] Smart: Web page pop-up closed")
-        except NoSuchElementException:
-            print(" [*] No web page pop-up present")
+            except Exception:
+                try:
+                    close_button = self.driver.find_element(By.XPATH, "/html/body/div/div/div[@class='modal-content']/div/button[@class='close']/span")
+                    close_button.click()
+                    print(" [*] Smart: Web page pop-up closed")
+                except Exception:
+                    try:
+                        close_button = self.driver.find_element(By.XPATH, "//*[@id='seller-content']/div/div/div[@class='modal-content']/div/div/button[@class='close']/span")
+                        close_button.click()
+                        print(" [*] Smart: Web page pop-up closed")
+                    except Exception:
+                        print(" [*] Smart: No Web page pop-up")
+        return alert_text
     
     def discountRateSetting(self, store_name):
         print("[+] Pricing start.")

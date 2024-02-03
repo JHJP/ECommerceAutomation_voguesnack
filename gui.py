@@ -16,6 +16,8 @@ smart_url = "https://accounts.commerce.naver.com/login?url=https%3A%2F%2Fsell.sm
 coupang_url = 'https://xauth.coupang.com/auth/realms/seller/protocol/openid-connect/auth?response_type=code&client_id=wing&redirect_uri=https%3A%2F%2Fwing.coupang.com%2Fsso%2Flogin?returnUrl%3D%252F&state=456c3cf5-a6dd-4f52-abe4-cd3364bad4e4&login=true&scope=openid'
 naver_datalab_url = "https://datalab.naver.com/"
 onchan_prd_stat_url = "https://www.onch3.co.kr/admin_mem_clo_list_2.php?ost=&sec=&ol=&npage="
+onchan_order_stat_coupang_url = "https://www.onch3.co.kr/admin_api_order.html?api_name=coupang"
+onchan_order_stat_smart_url = "https://www.onch3.co.kr/admin_api_order.html?api_name=smartstore"
 coupang_prd_list_url = "https://wing.coupang.com/vendor-inventory/list?searchIds=&startTime=2000-01-01&endTime=2099-12-31&productName=&brandName=&manufacturerName=&productType=&autoPricingStatus=ALL&dateType=productRegistrationDate&dateRangeShowStyle=true&dateRange=all&saleEndDatePeriodType=&includeUsedProduct=&deleteType=false&deliveryMethod=&shippingType=&shipping=&otherType=&productStatus=SAVED,WAIT_FOR_SALE,VALID,SOLD_OUT,INVALID,END_FOR_SALE,APPROVING,IN_REVIEW,DENIED,PARTIAL_APPROVED,APPROVED,ALL&advanceConditionShow=false&displayCategoryCodes=&currentMenuCode=&rocketMerchantVersion=&registrationType=&upBundling=ALL&hasUpBundlingItem=&hasBadImage=false&page=1&countPerPage=50&sortField=vendorInventoryId&desc=true&fromListV2=true&locale=ko_KR&vendorItemViolationType=&coupangAttributeOptimized=FALSE&autoPricingActive="
 smart_prd_list_url = "https://sell.smartstore.naver.com/#/products/origin-list"
 
@@ -60,7 +62,7 @@ def initialize_webdriver():
 
 def sourcing_action():
     global driver, EdgeSourcing, EdgeTool
-    isloggedin = False
+    isloggedin_sellha = False
     isDownloaded_sellha_df = EdgeSourcing.downloadChecker('/Users/papag/Downloads', "셀하 아이템 발굴 EXCEL_전체", first_phase=True)
     isDownloaded_sourced = EdgeSourcing.downloadChecker('/Users/papag/OneDrive/src/Projects/vogueSnack', "sourced.csv", first_phase=True)
     print("[+] Sourcing phase start.")
@@ -69,8 +71,8 @@ def sourcing_action():
                 if not isDownloaded_sellha_df:
                     sellha_id = id_var.get()
                     sellha_pw = password_var.get()
-                    isloggedin = EdgeSourcing.login('sellha',url,sellha_id,sellha_pw,'email', 'password',loginbtn1, False)
-                    if not isloggedin:
+                    isloggedin_sellha = EdgeSourcing.login('sellha',url,sellha_id,sellha_pw,'email', 'password',loginbtn1, False)
+                    if not isloggedin_sellha:
                         EdgeSourcing.login('sellha',url,sellha_id,sellha_pw,'email', 'password',loginbtn1, False)
                         EdgeTool.popupHandler(5, 'sellha')
                     EdgeTool.popupHandler(5, 'sellha')
@@ -130,7 +132,8 @@ def monthly_sourcing_uploading_action():
     sourcing_action()
     uploading_action()
     delivery_charge_changing_action()
-    input("press enter to close the program.")
+    input("[+] press enter to finish monthly.")
+    initialize_webdriver()
 
 def daily_sourcing_uploading_action():
     net_profit_ratio = int(net_profit_ratio_var.get())
@@ -258,6 +261,7 @@ def prd_stat_checking_action():
             if not smart_phase_done:
                 if not isLoggedin_smart:
                     isLoggedin_smart = EdgeSourcing.login('smart',smart_url,smart_id,smart_pw,'id','pw',smart_login_btn, True)
+                    EdgeTool.popupHandler(5, 'smart')
                     EdgeSourcing.pageNavigator(smart_prd_list_url)
                     EdgeTool.popupHandler(5, 'smart')
                     EdgeTool.out_of_stock_product_deleter('smart', out_of_stock_prd_string, out_of_stock_prd_temp_string)
@@ -268,7 +272,6 @@ def prd_stat_checking_action():
                     smart_phase_done = True
             if checking_phase_done and coupang_phase_done and smart_phase_done:
                 if not all_phase_done:
-                    isLoggedin_onchan = False
                     if not isLoggedin_onchan:
                     # Move to the prodcut status page in onchan.
                         isLoggedin_onchan = EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
@@ -278,8 +281,37 @@ def prd_stat_checking_action():
                         EdgeTool.out_of_stock_finisher()
                         all_phase_done = True
                     elif isLoggedin_onchan:
+                        EdgeSourcing.pageNavigator(onchan_prd_stat_url)
+                        EdgeTool.popupHandler(3, 'onchan')
                         EdgeTool.out_of_stock_finisher()
                         all_phase_done = True
+            break
+        except ElementClickInterceptedException:
+                message = "[!] Element intercepted. \n"
+                EdgeTool.append_to_text_widget(message, "red")
+                print("[!] Element intercepted. Scroll down the page.")
+                EdgeTool.scroll_downer(250)
+
+def gathering_order_action():
+    isLoggedin_onchan = False
+    onchan_id = id2_var.get()
+    onchan_pw = password2_var.get()
+    global driver, EdgeSourcing, EdgeUploading, EdgeTool
+    while True:
+        try:
+            if not isLoggedin_onchan:
+                # Move to the prodcut status page in onchan.
+                isLoggedin_onchan = EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
+                EdgeTool.popupHandler(3, 'onchan')
+                EdgeSourcing.pageNavigator(onchan_order_stat_coupang_url)
+                EdgeTool.order_gathering_handler('coupang')
+                EdgeSourcing.pageNavigator(onchan_order_stat_smart_url)
+                EdgeTool.order_gathering_handler('smart')
+            elif isLoggedin_onchan:
+                EdgeSourcing.pageNavigator(onchan_order_stat_coupang_url)
+                EdgeTool.order_gathering_handler('coupang')
+                EdgeSourcing.pageNavigator(onchan_order_stat_smart_url)
+                EdgeTool.order_gathering_handler('smart')
             break
         except ElementClickInterceptedException:
                 message = "[!] Element intercepted. \n"
@@ -376,6 +408,7 @@ daily_btn = tk.Button(root, text="Daily Sourcing & Uploading", command=daily_sou
 pricing_btn = tk.Button(root, text="Pricing", command=discount_rate_pricing_action)
 delivery_charge_changing_btn = tk.Button(root, text="DC Changing", command=delivery_charge_changing_action)
 prd_stat_checking_btn = tk.Button(root, text="Product stat checking", command=prd_stat_checking_action)
+gathering_order_btn = tk.Button(root, text="Product stat checking", command=gathering_order_action)
 
 webdriver_btn.pack()
 # sourcing_btn.pack()
