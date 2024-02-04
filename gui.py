@@ -18,6 +18,7 @@ naver_datalab_url = "https://datalab.naver.com/"
 onchan_prd_stat_url = "https://www.onch3.co.kr/admin_mem_clo_list_2.php?ost=&sec=&ol=&npage="
 onchan_order_stat_coupang_url = "https://www.onch3.co.kr/admin_api_order.html?api_name=coupang"
 onchan_order_stat_smart_url = "https://www.onch3.co.kr/admin_api_order.html?api_name=smartstore"
+onchan_prd_list_url = "https://www.onch3.co.kr/admin_mem_prd_list.html"
 coupang_prd_list_url = "https://wing.coupang.com/vendor-inventory/list?searchIds=&startTime=2000-01-01&endTime=2099-12-31&productName=&brandName=&manufacturerName=&productType=&autoPricingStatus=ALL&dateType=productRegistrationDate&dateRangeShowStyle=true&dateRange=all&saleEndDatePeriodType=&includeUsedProduct=&deleteType=false&deliveryMethod=&shippingType=&shipping=&otherType=&productStatus=SAVED,WAIT_FOR_SALE,VALID,SOLD_OUT,INVALID,END_FOR_SALE,APPROVING,IN_REVIEW,DENIED,PARTIAL_APPROVED,APPROVED,ALL&advanceConditionShow=false&displayCategoryCodes=&currentMenuCode=&rocketMerchantVersion=&registrationType=&upBundling=ALL&hasUpBundlingItem=&hasBadImage=false&page=1&countPerPage=50&sortField=vendorInventoryId&desc=true&fromListV2=true&locale=ko_KR&vendorItemViolationType=&coupangAttributeOptimized=FALSE&autoPricingActive="
 smart_prd_list_url = "https://sell.smartstore.naver.com/#/products/origin-list"
 
@@ -43,6 +44,8 @@ def set_default_text():
     coupang_id_entry.insert(0,"voguesnack")
     coupang_pw_entry.insert(0,"9w_kPvtu8Qcj93u")
     net_profit_ratio_entry.insert(0, "5")
+    min_rating_entry.insert(0, "4.5")
+    prd_max_num_entry.insert(0, "200")
 
 def initialize_webdriver():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
@@ -106,19 +109,21 @@ def sourcing_action():
 
 def uploading_action():
     print("[+] Uploading phase start.")
+    min_rating = float(min_rating_var.get())
+    prd_max_num = int(prd_max_num_var.get())
+    net_profit_ratio = int(net_profit_ratio_var.get())
+    onchan_id = id2_var.get()
+    onchan_pw = password2_var.get()
+    smart_id = smart_id_var.get()
+    smart_pw = smart_pw_var.get()
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
     while True:
             try:
-                net_profit_ratio = int(net_profit_ratio_var.get())
-                onchan_id = id2_var.get()
-                onchan_pw = password2_var.get()
-                smart_id = smart_id_var.get()
-                smart_pw = smart_pw_var.get()
                 # Move to the data center hompage and compare keywords if there is in the center or not.
                 EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
                 EdgeTool.popupHandler(3, 'onchan')
                 preprocesedSourced_df = pd.read_csv('preprocesedSourced.csv', encoding='utf-8-sig')
-                EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True, is_margin_descend=False)
+                EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, min_rating, prd_max_num, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True, is_margin_descend=False)
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted while uploading.\n"
@@ -137,6 +142,8 @@ def monthly_sourcing_uploading_action():
 
 def daily_sourcing_uploading_action():
     net_profit_ratio = int(net_profit_ratio_var.get())
+    min_rating = float(min_rating_var.get())
+    prd_max_num = int(prd_max_num_var.get())
     onchan_id = id2_var.get()
     onchan_pw = password2_var.get()
     smart_id = smart_id_var.get()
@@ -150,7 +157,7 @@ def daily_sourcing_uploading_action():
                 if not isloggedin:
                     isloggedin = EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
                     EdgeTool.popupHandler(3, 'onchan')
-                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True, is_margin_descend=False)
+                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, min_rating, prd_max_num, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True, is_margin_descend=False)
                 delivery_charge_changing_action()
                 input("press enter to close the program.")
                 # return discount_rate_pricing_action() # If you want to use automize discount rate setting, turn on the line.
@@ -319,6 +326,67 @@ def gathering_order_action():
                 print("[!] Element intercepted. Scroll down the page.")
                 EdgeTool.scroll_downer(250)
 
+def prd_filtering_action():
+    isLoggedin_onchan = False
+    isLoggedin_coupang = False
+    isLoggedin_smart = False
+    onchan_phase_done = False
+    coupang_phase_done = False
+    smart_phase_done = False
+    all_phase_done = False
+    smart_id = smart_id_var.get()
+    smart_pw = smart_pw_var.get()
+    coupang_id = coupang_id_var.get()
+    coupang_pw = coupang_pw_var.get()
+    onchan_id = id2_var.get()
+    onchan_pw = password2_var.get()
+    global driver, EdgeSourcing, EdgeUploading, EdgeTool
+    while True:
+        try:
+            if not coupang_phase_done:
+                # Coupang
+                if not isLoggedin_coupang:
+                    isLoggedin_coupang = EdgeSourcing.login('coupang',coupang_url, coupang_id, coupang_pw, 'username', 'password', coupang_loginbtn, authPhase=True)
+                    EdgeSourcing.pageNavigator(coupang_prd_list_url)
+                    prd_name_list = EdgeTool.filtered_prd_deleter('coupang', [])
+                    coupang_phase_done = True
+                elif isLoggedin_coupang:
+                    prd_name_list = EdgeTool.filtered_prd_deleter('coupang', [])
+                    coupang_phase_done = True
+            # Smart
+            if not smart_phase_done:
+                if not isLoggedin_smart:
+                    isLoggedin_smart = EdgeSourcing.login('smart',smart_url,smart_id,smart_pw,'id','pw',smart_login_btn, True)
+                    EdgeTool.popupHandler(5, 'smart')
+                    EdgeSourcing.pageNavigator(smart_prd_list_url)
+                    EdgeTool.popupHandler(5, 'smart')
+                    EdgeTool.filtered_prd_deleter('smart',prd_name_list)
+                    smart_phase_done = True
+                elif isLoggedin_smart:
+                    EdgeTool.popupHandler(5, 'smart')
+                    EdgeTool.filtered_prd_deleter('smart', prd_name_list)
+                    smart_phase_done = True
+            # Onchan
+            if not onchan_phase_done:
+                if not isLoggedin_onchan:
+                    # Move to the prodcut status page in onchan.
+                    isLoggedin_onchan = EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
+                    EdgeTool.popupHandler(3, 'onchan')
+                    EdgeSourcing.pageNavigator(onchan_prd_list_url)
+                    # Deleting procedure.
+                    EdgeTool.filtered_prd_deleter('onchan', prd_name_list)
+                    onchan_phase_done = True
+                elif isLoggedin_onchan:
+                    # Deleting or Suspending procedure.
+                    EdgeTool.filtered_prd_deleter('onchan', prd_name_list)
+                    onchan_phase_done = True
+            break
+        except ElementClickInterceptedException:
+                message = "[!] Element intercepted. \n"
+                EdgeTool.append_to_text_widget(message, "red")
+                print("[!] Element intercepted. Scroll down the page.")
+                EdgeTool.scroll_downer(250)
+
 # Initialize the main window
 root = tk.Tk()
 root.title("Automation Tool")
@@ -334,6 +402,8 @@ smart_pw_var = tk.StringVar()
 coupang_id_var = tk.StringVar()
 coupang_pw_var = tk.StringVar()
 net_profit_ratio_var = tk.StringVar()
+min_rating_var = tk.StringVar()
+prd_max_num_var = tk.StringVar()
 
 # Creating Frames for each set of label and entry for better alignment
 frame1 = tk.Frame(root)
@@ -345,6 +415,8 @@ frame6 = tk.Frame(root)
 frame7 = tk.Frame(root)
 frame8 = tk.Frame(root)
 frame9 = tk.Frame(root)
+frame10 = tk.Frame(root)
+frame11 = tk.Frame(root)
 
 # Create Labels
 label_id = tk.Label(frame1, text="Sellha ID")
@@ -356,6 +428,8 @@ label_smart_pw = tk.Label(frame6, text="Smart PW")
 label_coupang_id = tk.Label(frame7, text="Smart ID")
 label_coupang_pw = tk.Label(frame8, text="Smart PW")
 label_net_profit_ratio = tk.Label(frame9, text="Net profit ratio(%)")
+label_min_rating = tk.Label(frame10, text="Minimum rating(1~5)")
+label_prd_max_num = tk.Label(frame11, text="Maximum number of products uploading per keyword")
 
 # Create Entries
 id_entry = tk.Entry(frame1, textvariable=id_var)
@@ -367,6 +441,8 @@ smart_pw_entry = tk.Entry(frame6, textvariable=smart_pw_var, show="*")
 coupang_id_entry = tk.Entry(frame7, textvariable=coupang_id_var)
 coupang_pw_entry = tk.Entry(frame8, textvariable=coupang_pw_var, show="*")
 net_profit_ratio_entry = tk.Entry(frame9, textvariable=net_profit_ratio_var)
+min_rating_entry = tk.Entry(frame10, textvariable=min_rating_var)
+prd_max_num_entry = tk.Entry(frame11, textvariable=prd_max_num_var)
 
 # Packing Labels and Entries in their respective frames
 label_id.pack(side=tk.LEFT)
@@ -387,6 +463,10 @@ label_coupang_pw.pack(side=tk.LEFT)
 coupang_pw_entry.pack(side=tk.RIGHT)
 label_net_profit_ratio.pack(side=tk.LEFT)
 net_profit_ratio_entry.pack(side=tk.RIGHT)
+label_min_rating.pack(side=tk.LEFT)
+min_rating_entry.pack(side=tk.RIGHT)
+label_prd_max_num.pack(side=tk.LEFT)
+prd_max_num_entry.pack(side=tk.RIGHT)
 
 # Packing Frames
 frame1.pack()
@@ -398,6 +478,8 @@ frame6.pack()
 frame7.pack()
 frame8.pack()
 frame9.pack()
+frame10.pack()
+frame11.pack()
 
 # Create buttons for Sourcing and Uploading
 sourcing_btn = tk.Button(root, text="Monthly Sourcing", command=sourcing_action)
@@ -406,9 +488,10 @@ monthly_btn = tk.Button(root, text="Monthly Sourcing & Uploading", command=month
 webdriver_btn = tk.Button(root, text="Initialize WebDriver", command=initialize_webdriver)
 daily_btn = tk.Button(root, text="Daily Sourcing & Uploading", command=daily_sourcing_uploading_action)
 pricing_btn = tk.Button(root, text="Pricing", command=discount_rate_pricing_action)
-delivery_charge_changing_btn = tk.Button(root, text="DC Changing", command=delivery_charge_changing_action)
+delivery_charge_changing_btn = tk.Button(root, text="Delivery charge Changing", command=delivery_charge_changing_action)
 prd_stat_checking_btn = tk.Button(root, text="Product stat checking", command=prd_stat_checking_action)
-gathering_order_btn = tk.Button(root, text="Product stat checking", command=gathering_order_action)
+prd_filtering_btn = tk.Button(root, text="Product filtering", command=prd_filtering_action)
+gathering_order_btn = tk.Button(root, text="Order gathering", command=gathering_order_action)
 
 webdriver_btn.pack()
 # sourcing_btn.pack()
@@ -416,8 +499,10 @@ webdriver_btn.pack()
 monthly_btn.pack()
 daily_btn.pack()
 # pricing_btn.pack()
-delivery_charge_changing_btn.pack()
+# delivery_charge_changing_btn.pack()
 prd_stat_checking_btn.pack()
+prd_filtering_btn.pack()
+gathering_order_btn.pack()
 
 # Creating and placing the result Text widget
 result_text = tk.Text(root, height=10, width=50)
