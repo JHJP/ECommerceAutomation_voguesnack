@@ -45,7 +45,7 @@ def set_default_text():
     coupang_pw_entry.insert(0,"9w_kPvtu8Qcj93u")
     net_profit_ratio_entry.insert(0, "5")
     min_rating_entry.insert(0, "4.5")
-    prd_max_num_entry.insert(0, "200")
+    prd_max_num_entry.insert(0, "20")
 
 def initialize_webdriver():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
@@ -114,8 +114,6 @@ def uploading_action():
     net_profit_ratio = int(net_profit_ratio_var.get())
     onchan_id = id2_var.get()
     onchan_pw = password2_var.get()
-    smart_id = smart_id_var.get()
-    smart_pw = smart_pw_var.get()
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
     while True:
             try:
@@ -138,29 +136,20 @@ def monthly_sourcing_uploading_action():
     uploading_action()
     delivery_charge_changing_action()
     input("[+] press enter to finish monthly.")
-    initialize_webdriver()
 
 def daily_sourcing_uploading_action():
     net_profit_ratio = int(net_profit_ratio_var.get())
     min_rating = float(min_rating_var.get())
     prd_max_num = int(prd_max_num_var.get())
-    onchan_id = id2_var.get()
-    onchan_pw = password2_var.get()
-    smart_id = smart_id_var.get()
-    smart_pw = smart_pw_var.get()
-    isloggedin = False
-    global driver, EdgeSourcing, EdgeUploading, EdgeTool
     while True:
             try:
+                driver.switch_to.window(window_empty)
                 naver_sourced_df = EdgeSourcing.daily_sourcing()
                 naver_sourced_isEdited_df = EdgeSourcing.targetListMaker(naver_sourced_df, isDaily=True)
-                if not isloggedin:
-                    isloggedin = EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
-                    EdgeTool.popupHandler(3, 'onchan')
+                driver.switch_to.window(window_onchan)
                 EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, min_rating, prd_max_num, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True, is_margin_descend=False)
-                delivery_charge_changing_action()
-                input("press enter to close the program.")
-                # return discount_rate_pricing_action() # If you want to use automize discount rate setting, turn on the line.
+                driver.switch_to.window(window_coupang)
+                EdgeTool.delivery_charge_changer('coupang',isDeliveryCharge=False)
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted while daily.\n"
@@ -171,32 +160,26 @@ def daily_sourcing_uploading_action():
     input("press enter to close the program.")
 
 def delivery_charge_changing_action():
-    isLoggedin = False
-    coupang_id = coupang_id_var.get()
-    coupang_pw = coupang_pw_var.get()
-    global driver, EdgeSourcing, EdgeUploading, EdgeTool
-    while True:
-            try:
-                if not isLoggedin:
-                    isLoggedin = EdgeSourcing.login('coupang',coupang_url, coupang_id, coupang_pw, 'username', 'password', coupang_loginbtn, authPhase=True)
-                EdgeTool.delivery_charge_changer('coupang',isDeliveryCharge=False)
-                break
-            except ElementClickInterceptedException:
-                    message = "[!] Element intercepted. \n"
-                    EdgeTool.append_to_text_widget(message, "red")
-                    print("[!] Element intercepted. Scroll down the page.")
-                    EdgeTool.scroll_downer(250)
+    # isLoggedin = False
+    # coupang_id = coupang_id_var.get()
+    # coupang_pw = coupang_pw_var.get()
+    # global driver, EdgeSourcing, EdgeUploading, EdgeTool
+    # while True:
+    #         try:
+                # if not isLoggedin_coupang:
+                #     isLoggedin_coupang = EdgeSourcing.login('coupang',coupang_url, coupang_id, coupang_pw, 'username', 'password', coupang_loginbtn, authPhase=True)
+    EdgeTool.delivery_charge_changer('coupang',isDeliveryCharge=False)
+            #     break
+            # except ElementClickInterceptedException:
+            #         message = "[!] Element intercepted. \n"
+            #         EdgeTool.append_to_text_widget(message, "red")
+            #         print("[!] Element intercepted. Scroll down the page.")
+            #         EdgeTool.scroll_downer(250)
 
 def discount_rate_pricing_action():
     isLoggedin = False
-    coupang_url = 'https://xauth.coupang.com/auth/realms/seller/protocol/openid-connect/auth?response_type=code&client_id=wing&redirect_uri=https%3A%2F%2Fwing.coupang.com%2Fsso%2Flogin?returnUrl%3D%252F&state=456c3cf5-a6dd-4f52-abe4-cd3364bad4e4&login=true&scope=openid'
-    usernameBox = 'username'
-    passwordBox = 'password'
-    loginbtn = '.cp-loginpage__form__submit'
     smart_id = smart_id_var.get()
     smart_pw = smart_pw_var.get()
-    coupang_id = coupang_id_var.get()
-    coupang_pw = coupang_pw_var.get()
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
     while True:
             try:
@@ -254,6 +237,10 @@ def prd_stat_checking_action():
                     # Deleting or Suspending procedure.
                     out_of_stock_prd_string, out_of_stock_prd_temp_string = EdgeTool.out_of_stock_checker()
                     checking_phase_done = True
+            if out_of_stock_prd_string == 'Empty' and out_of_stock_prd_temp_string == 'Empty':
+                 coupang_phase_done = True
+                 smart_phase_done = True
+                 all_phase_done = True
             # Coupang
             if not coupang_phase_done:
                 if not isLoggedin_coupang:
@@ -267,7 +254,7 @@ def prd_stat_checking_action():
             # Smart
             if not smart_phase_done:
                 if not isLoggedin_smart:
-                    isLoggedin_smart = EdgeSourcing.login('smart',smart_url,smart_id,smart_pw,'id','pw',smart_login_btn, True)
+                    isLoggedin_smart = EdgeSourcing.login('smart',smart_url,smart_id,smart_pw,'id','pw',smart_login_btn, authPhase=True)
                     EdgeTool.popupHandler(5, 'smart')
                     EdgeSourcing.pageNavigator(smart_prd_list_url)
                     EdgeTool.popupHandler(5, 'smart')
@@ -298,6 +285,7 @@ def prd_stat_checking_action():
                 EdgeTool.append_to_text_widget(message, "red")
                 print("[!] Element intercepted. Scroll down the page.")
                 EdgeTool.scroll_downer(250)
+    print("[+] Out of stock handling finish.")
 
 def gathering_order_action():
     isLoggedin_onchan = False
@@ -327,59 +315,106 @@ def gathering_order_action():
                 EdgeTool.scroll_downer(250)
 
 def prd_filtering_action():
-    isLoggedin_onchan = False
-    isLoggedin_coupang = False
+    onchan_filtering_done = False
+    coupang_filtering_done = False
+    smart_filtering_done = False
+    while True:
+        try:
+            if not coupang_filtering_done:
+                driver.switch_to.window(window_coupang)
+                EdgeSourcing.pageNavigator(coupang_prd_list_url)
+                prd_name_list = EdgeTool.filtered_prd_deleter('coupang', [])
+                coupang_filtering_done = True
+                df = pd.DataFrame(prd_name_list, columns=['prd_code'])
+                df.to_csv('coupang_suspended_prd.csv', index=False)
+            # Smart
+            if not smart_filtering_done:
+                driver.switch_to.window(window_smart)
+                EdgeSourcing.pageNavigator(smart_prd_list_url)
+                EdgeTool.popupHandler(5, 'smart')
+                prd_name_list = EdgeTool.filtered_prd_deleter('smart', prd_name_list)
+                unique_prd_name_list = list(set(prd_name_list))
+                smart_filtering_done = True
+                df = pd.DataFrame(unique_prd_name_list, columns=['prd_code'])
+                df.to_csv('smartcoupang_suspended_prd.csv', index=False)
+                if prd_name_list == []:
+                    onchan_filtering_done = True
+            # Onchan
+            if not onchan_filtering_done:
+                driver.switch_to.window(window_smart)
+                EdgeSourcing.pageNavigator(onchan_prd_list_url)
+                EdgeTool.filtered_prd_deleter('onchan', unique_prd_name_list)
+                onchan_filtering_done = True
+            print("[+] Filtering end.")
+            break
+        except ElementClickInterceptedException:
+                message = "[!] Element intercepted. \n"
+                EdgeTool.append_to_text_widget(message, "red")
+                print("[!] Element intercepted. Scroll down the page.")
+                EdgeTool.scroll_downer(250)
+
+def open_tabs():
+    global driver, EdgeSourcing, EdgeUploading, EdgeTool, isLoggedin_smart, isLoggedin_coupang, isLoggedin_onchan, isloggedin_sellha, windows, window_smart, window_coupang, window_onchan, window_sellha, window_empty
+    # Open smart, coupang, onchan, sellha tab with logged in.
     isLoggedin_smart = False
-    onchan_phase_done = False
-    coupang_phase_done = False
-    smart_phase_done = False
-    all_phase_done = False
+    isLoggedin_coupang = False
+    isLoggedin_onchan = False
+    isloggedin_sellha = False
     smart_id = smart_id_var.get()
     smart_pw = smart_pw_var.get()
     coupang_id = coupang_id_var.get()
     coupang_pw = coupang_pw_var.get()
     onchan_id = id2_var.get()
     onchan_pw = password2_var.get()
-    global driver, EdgeSourcing, EdgeUploading, EdgeTool
+    sellha_id = id_var.get()
+    sellha_pw = password_var.get()
+        # smart
+    isLoggedin_smart = EdgeSourcing.login('smart',smart_url,smart_id,smart_pw,'id','pw',smart_login_btn, authPhase=True)
+        # Open tabs
+    for _ in range(4):
+        driver.execute_script("window.open('about:blank', '_blank');")
+        time.sleep(1)
+    windows = driver.window_handles
+    window_smart = windows[0]
+    window_coupang = windows[1]
+    window_onchan = windows[2]
+    window_sellha = windows[3]
+    window_empty = windows[4]
+        # coupang
+    driver.switch_to.window(window_coupang)
+    isLoggedin_coupang = EdgeSourcing.login('coupang',coupang_url, coupang_id, coupang_pw, 'username', 'password', coupang_loginbtn, authPhase=True)
+        # onchan
+    driver.switch_to.window(window_onchan)
+    isLoggedin_onchan = EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
+        # sellha
+    driver.switch_to.window(window_sellha)
+    isloggedin_sellha = EdgeSourcing.login('sellha',url,sellha_id,sellha_pw,'email', 'password',loginbtn1, False)
+
+def prd_exsition_comparing_action():
+    onchan_checking_done = False
+    coupang_checking_done = False
+    smart_checking_done = False
     while True:
         try:
-            if not coupang_phase_done:
-                # Coupang
-                if not isLoggedin_coupang:
-                    isLoggedin_coupang = EdgeSourcing.login('coupang',coupang_url, coupang_id, coupang_pw, 'username', 'password', coupang_loginbtn, authPhase=True)
-                    EdgeSourcing.pageNavigator(coupang_prd_list_url)
-                    prd_name_list = EdgeTool.filtered_prd_deleter('coupang', [])
-                    coupang_phase_done = True
-                elif isLoggedin_coupang:
-                    prd_name_list = EdgeTool.filtered_prd_deleter('coupang', [])
-                    coupang_phase_done = True
+            if not coupang_checking_done:
+                driver.switch_to.window(window_coupang)
+                EdgeSourcing.pageNavigator(coupang_prd_list_url)
+                EdgeTool.prd_exsition_comparer('coupang')
+                coupang_checking_done = True
             # Smart
-            if not smart_phase_done:
-                if not isLoggedin_smart:
-                    isLoggedin_smart = EdgeSourcing.login('smart',smart_url,smart_id,smart_pw,'id','pw',smart_login_btn, True)
-                    EdgeTool.popupHandler(5, 'smart')
-                    EdgeSourcing.pageNavigator(smart_prd_list_url)
-                    EdgeTool.popupHandler(5, 'smart')
-                    EdgeTool.filtered_prd_deleter('smart',prd_name_list)
-                    smart_phase_done = True
-                elif isLoggedin_smart:
-                    EdgeTool.popupHandler(5, 'smart')
-                    EdgeTool.filtered_prd_deleter('smart', prd_name_list)
-                    smart_phase_done = True
+            if not smart_checking_done:
+                driver.switch_to.window(window_smart)
+                EdgeSourcing.pageNavigator(smart_prd_list_url)
+                EdgeTool.popupHandler(5, 'smart')
+                EdgeTool.prd_exsition_comparer('smart')
+                smart_checking_done = True
             # Onchan
-            if not onchan_phase_done:
-                if not isLoggedin_onchan:
-                    # Move to the prodcut status page in onchan.
-                    isLoggedin_onchan = EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
-                    EdgeTool.popupHandler(3, 'onchan')
-                    EdgeSourcing.pageNavigator(onchan_prd_list_url)
-                    # Deleting procedure.
-                    EdgeTool.filtered_prd_deleter('onchan', prd_name_list)
-                    onchan_phase_done = True
-                elif isLoggedin_onchan:
-                    # Deleting or Suspending procedure.
-                    EdgeTool.filtered_prd_deleter('onchan', prd_name_list)
-                    onchan_phase_done = True
+            if not onchan_checking_done:
+                driver.switch_to.window(window_smart)
+                EdgeSourcing.pageNavigator(onchan_prd_list_url)
+                EdgeTool.prd_exsition_comparer('onchan')
+                onchan_checking_done = True
+            print("[+] Checking end.")
             break
         except ElementClickInterceptedException:
                 message = "[!] Element intercepted. \n"
@@ -492,7 +527,8 @@ delivery_charge_changing_btn = tk.Button(root, text="Delivery charge Changing", 
 prd_stat_checking_btn = tk.Button(root, text="Product stat checking", command=prd_stat_checking_action)
 prd_filtering_btn = tk.Button(root, text="Product filtering", command=prd_filtering_action)
 gathering_order_btn = tk.Button(root, text="Order gathering", command=gathering_order_action)
-
+prd_exsition_comparing_btn = tk.Button(root, text="Product existion checking", command=prd_exsition_comparing_action
+)
 webdriver_btn.pack()
 # sourcing_btn.pack()
 # uploading_btn.pack()
@@ -514,4 +550,5 @@ result_text.tag_configure("red", foreground="red")
 # Start the main event loop
 set_default_text()
 initialize_webdriver()
+open_tabs()
 root.mainloop()
