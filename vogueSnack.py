@@ -651,6 +651,20 @@ class Tool:
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
 
+    def dummy_deleter(self, folder_path, target_prefix):
+        # Delete dummy files
+        # os.remove('/Users/papag/OneDrive/src/Projects/vogueSnack/스마트스토어상품_할인률추가.xlsx')
+        # print(f"Deleted file: 스마트스토어상품_할인률추가.xlsx")
+        # os.remove('/Users/papag/OneDrive/src/Projects/vogueSnack/smart_discount_rate_daily.csv')
+        # print(f"Deleted file: smart_discount_rate_daily.csv")
+        # folder_path = '/Users/papag/Downloads/'
+        # target_prefix = '스마트스토어'
+        for filename in os.listdir(folder_path):
+            if filename.startswith(target_prefix):
+                file_path = os.path.join(folder_path, filename)
+                os.remove(file_path)
+                print(f"Deleted file: {filename}")
+    
     def prd_exsition_comparer(self, store_name):
         if store_name == 'smart':
             # Click the excel work dropdown
@@ -900,7 +914,7 @@ class Tool:
                     smart_confirm_btn.click()
                     self.popupHandler(5, 'smart')
                     time.sleep(0.5)
-                    message_smart_out_of_stock = f" [*] Smart(suspended, rejected): item deletion {result}."
+                    # message_smart_out_of_stock = f" [*] Smart(suspended, rejected): item deletion {result}."
                 else:
                     message_smart_out_of_stock = " [*] Smart(suspended, rejected): Item not found."
                 print(message_smart_out_of_stock)
@@ -975,6 +989,8 @@ class Tool:
                         smart_confirm_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div/div[@class="modal-content"]/div/div/span/button[contains(@class, "btn") and contains(@class, "btn-primary")]'))) 
                         time.sleep(0.5)
                         smart_confirm_btn.click()
+                        edited_result_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div/div/div[2]/div/div/p/strong'))) 
+                        edited_result = edited_result_element.text
                         self.popupHandler(5, 'smart')
                         time.sleep(0.5)
                         while True:
@@ -991,6 +1007,9 @@ class Tool:
                         if counter ==3:
                             print()
                             print(" [*] There are no result.")
+                            break
+                        if edited_result == '0':
+                            print(" [*] There are products that can not be deleted.")
                             break
                     except Exception as e:
                         # coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
@@ -1155,7 +1174,7 @@ class Tool:
         out_of_stock_df.columns = new_header  # Set the header row as the df header
         new_out_of_stock_df = out_of_stock_df.loc[out_of_stock_df['분류'].isin(['단종', '품절'])] # Grab the 상품코드 which 분류 is 단종 or 품절
         new_out_of_stock_df.drop_duplicates(subset='상품코드', inplace=True)
-        new_out_of_stock_temp_df = out_of_stock_df.loc[out_of_stock_df['분류'].isin(['일시품절'])] # Grab the 상품코드 which 분류 is 단종 or 품절
+        new_out_of_stock_temp_df = out_of_stock_df.loc[out_of_stock_df['분류'].isin(['일시품절', '옵션품절'])] # Grab the 상품코드 which 분류 is 일시품절 or 옵션품절
         new_out_of_stock_temp_df.drop_duplicates(subset='상품코드', inplace=True)
         # Sending the out of stock prd codes to coupang and smartstre and delete them.
         if len(new_out_of_stock_df) != 0:
@@ -1235,7 +1254,7 @@ class Tool:
                 while True:
                     try:
                         print("\r [*] Wait for the table loading...", end='')
-                        WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
                         print()
                         print(" [*] Table loaded successfully.")
                         break
@@ -1313,7 +1332,7 @@ class Tool:
                 while True:
                     try:
                         print("\r [*] Wait for the table loading...", end='')
-                        WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div/ui-view/div/div/div/div/div/div/div/div/div/div[@row-index="0"]/div/div[@class="ag-cell-wrapper"]')))
+                        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div/ui-view/div/div/div/div/div/div/div/div/div/div[@row-index="0"]/div/div[@class="ag-cell-wrapper"]')))
                         print()
                         print(" [*] Table loaded successfully.")
                         break
@@ -1338,12 +1357,12 @@ class Tool:
                     message_smart_temp = "Smart(temporally): Item not found."
                 print(message_smart_temp)
 
-    def delivery_charge_changer(self,storename, isDeliveryCharge):
+    def delivery_charge_changer(self,storename, prd_list_url, isDeliveryCharge):
         print(f"[+] Start delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge}")
         if not isDeliveryCharge:
             # Move to the view/edit products page
             if storename == 'coupang':
-                self.sourcing.pageNavigator('https://wing.coupang.com/vendor-inventory/list?searchIds=&startTime=2000-01-01&endTime=2099-12-31&productName=&brandName=&manufacturerName=&productType=&autoPricingStatus=ALL&dateType=productRegistrationDate&dateRangeShowStyle=true&dateRange=all&saleEndDatePeriodType=&includeUsedProduct=&deleteType=false&deliveryMethod=&shippingType=&shipping=&otherType=&productStatus=SAVED,WAIT_FOR_SALE,VALID,SOLD_OUT,INVALID,END_FOR_SALE,APPROVING,IN_REVIEW,DENIED,PARTIAL_APPROVED,APPROVED,ALL&advanceConditionShow=false&displayCategoryCodes=&currentMenuCode=&rocketMerchantVersion=&registrationType=&upBundling=ALL&hasUpBundlingItem=&hasBadImage=false&page=1&countPerPage=50&sortField=vendorInventoryId&desc=true&fromListV2=true&locale=ko_KR&vendorItemViolationType=&coupangAttributeOptimized=FALSE&autoPricingActive=')
+                self.sourcing.pageNavigator(prd_list_url)
                 time.sleep(0.5)
                 all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[2]/span/span[1]/label')))
                 time.sleep(0.5)
@@ -1671,18 +1690,6 @@ class Tool:
                         find_file.click()
                         print("[+] Uploading discount rate end.")
                         input("[+] Pricing end. If done, press enter.")
-                        # Delete dummy files
-                        os.remove('/Users/papag/OneDrive/src/Projects/vogueSnack/스마트스토어상품_할인률추가.xlsx')
-                        print(f"Deleted file: 스마트스토어상품_할인률추가.xlsx")
-                        os.remove('/Users/papag/OneDrive/src/Projects/vogueSnack/smart_discount_rate_daily.csv')
-                        print(f"Deleted file: smart_discount_rate_daily.csv")
-                        folder_path = '/Users/papag/Downloads/'
-                        target_prefix = '스마트스토어'
-                        for filename in os.listdir(folder_path):
-                            if filename.startswith(target_prefix) and filename.endswith(".xlsx"):
-                                file_path = os.path.join(folder_path, filename)
-                                os.remove(file_path)
-                                print(f"Deleted file: {filename}")
                         break
         # elif store_name == 'coupang':
 
