@@ -126,7 +126,7 @@ def uploading_action():
                     EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
                 EdgeTool.popupHandler(3, 'onchan')
                 preprocesedSourced_df = pd.read_csv('preprocesedSourced.csv', encoding='utf-8-sig')
-                EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, min_rating, prd_max_num, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=False)
+                EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, min_rating, prd_max_num, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=margin_descend_var.get() == "True")
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted while uploading.\n"
@@ -154,7 +154,7 @@ def daily_sourcing_uploading_action():
                 naver_sourced_df = EdgeSourcing.daily_sourcing()
                 naver_sourced_isEdited_df = EdgeSourcing.targetListMaker(naver_sourced_df, isDaily=True)
                 driver.switch_to.window(window_onchan)
-                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, min_rating, prd_max_num, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=False)
+                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, min_rating, prd_max_num, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=margin_descend_var.get() == "True")
                 driver.switch_to.window(window_coupang)
                 EdgeTool.delivery_charge_changer('coupang', coupang_prd_list_url, isDeliveryCharge=delivery_charge_var_coupang.get() == "True")
                 break
@@ -445,6 +445,7 @@ min_rating_var = tk.StringVar()
 prd_max_num_var = tk.StringVar()
 delivery_charge_var_coupang = tk.StringVar(value="False")
 delivery_charge_var_smart = tk.StringVar(value="True")
+margin_descend_var = tk.StringVar(value="False")
 
 # Creating Frames for each set of label and entry for better alignment
 frame1 = tk.Frame(root)
@@ -460,6 +461,7 @@ frame10 = tk.Frame(root)
 frame11 = tk.Frame(root)
 frame12 = tk.Frame(root)
 frame13 = tk.Frame(root)
+frame14 = tk.Frame(root)
 
 # Create Labels
 label_id = tk.Label(frame1, text="Sellha ID")
@@ -475,6 +477,7 @@ label_min_rating = tk.Label(frame10, text="Minimum rating(1~5)")
 label_prd_max_num = tk.Label(frame11, text="Maximum number of products uploading per keyword")
 label_delivery_charge_dropdown_coupang = tk.Label(frame12, text="Coupang Delivery charge")
 label_delivery_charge_dropdown_smart = tk.Label(frame13, text="Smart Delivery charge")
+label_margin_descend_dropdown = tk.Label(frame14, text="Sort by highest margin")
 
 # Create Entries
 id_entry = tk.Entry(frame1, textvariable=id_var)
@@ -491,6 +494,7 @@ prd_max_num_entry = tk.Entry(frame11, textvariable=prd_max_num_var)
 # Create Drop downs
 delivery_charge_dropdown_coupang = ttk.Combobox(frame12, textvariable=delivery_charge_var_coupang, values=["True", "False"])
 delivery_charge_dropdown_smart = ttk.Combobox(frame13, textvariable=delivery_charge_var_smart, values=["True", "False"])
+margin_descend_dropdown = ttk.Combobox(frame14, textvariable=margin_descend_var, values=["True", "False"])
 
 # Packing Labels and Entries in their respective frames
 label_id.pack(side=tk.LEFT)
@@ -519,6 +523,8 @@ label_delivery_charge_dropdown_coupang.pack(side=tk.LEFT)
 delivery_charge_dropdown_coupang.pack(side=tk.RIGHT)
 label_delivery_charge_dropdown_smart.pack(side=tk.LEFT)
 delivery_charge_dropdown_smart.pack(side=tk.RIGHT)
+label_margin_descend_dropdown.pack(side=tk.LEFT)
+margin_descend_dropdown.pack(side=tk.RIGHT)
 
 # Packing Frames
 frame1.pack()
@@ -534,6 +540,7 @@ frame10.pack()
 frame11.pack()
 frame12.pack()
 frame13.pack()
+frame14.pack()
 
 # Create buttons for Sourcing and Uploading
 sourcing_btn = tk.Button(root, text="Monthly Sourcing", command=sourcing_action)
