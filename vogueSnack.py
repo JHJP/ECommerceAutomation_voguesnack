@@ -450,7 +450,7 @@ class Uploading:
                             edit_button.click()
                             break
                         except ElementClickInterceptedException:
-                            message = "[!] Element intercepted while sending button clicking.\n"
+                            message = "[!] Element intercepted while price edit button clicked.\n"
                             self.tool.append_to_text_widget(message, "red")
                             message = "[*] Scroll down little bit and try again.\n"
                             self.tool.append_to_text_widget(message, "blue")
@@ -1543,6 +1543,10 @@ class Tool:
     def append_to_text_widget(self, message, tag=""):
         # Method to append text to the Text widget in gui.py
         self.result_text.insert(tk.END, message, tag)
+         # Ensure the appended text is visible
+        self.result_text.see(tk.END)
+        # Update the GUI to reflect changes immediately
+        self.result_text.update_idletasks()
 
     def popupHandler(self, waitTime, store_name):
         counter = 0
