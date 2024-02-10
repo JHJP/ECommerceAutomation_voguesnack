@@ -386,7 +386,7 @@ class Uploading:
                 if store_name == 'coupang':
                     # Calculate the retail price
                     sc = 0.1199 # sales commission with VAT: sales commission is differed between category. But I set it to tme maximum sales commission(10.9%).
-                    dc = 0.033 # delievery commission with VAT
+                    dc = 0.033 # delivery commission with VAT
                     ait = 6 # aggregate income tax(%)
                         # Iterate through the list to find the matching product code
                     for code, charge in lowest_delivery_charge_list:
@@ -1426,9 +1426,9 @@ class Tool:
                             time.sleep(0.5)
                             shipping_edit_btn.click()
                             time.sleep(0.5)
-                            paid_delievery_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[2]/div[2]/div[2]/div/div/div[6]/div/div[1]/div/div[2]/div/div/ul[1]/li')))
+                            paid_delivery_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[2]/div[2]/div[2]/div/div/div[6]/div/div[1]/div/div[2]/div/div/ul[1]/li')))
                             time.sleep(0.5)
-                            paid_delievery_btn.click()
+                            paid_delivery_btn.click()
                             time.sleep(0.5)
                             free_shipping_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[2]/div[2]/div[2]/div/div/div[6]/div/div[1]/div/div[2]/div/div/ul[2]/li[1]/div')))
                             time.sleep(0.5)
@@ -1502,19 +1502,19 @@ class Tool:
                 prd_price_text = prd_price.text.strip().replace('원','')
                 if price_autonomy_detail_text == "가격자율" and prd_price_text != "0":
                     # Get delevery charge(lower, max)
-                    delievery_fee_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[4]/ul/li[1]/div[2]')))
-                    delievery_fee_detail_text = delievery_fee_detail.text
+                    delivery_fee_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[4]/ul/li[1]/div[2]')))
+                    delivery_fee_detail_text = delivery_fee_detail.text
                         # Remove HTML tags if any exist
-                    clean_delievery_fee_detail_text = re.sub('<[^<]+?>', '', delievery_fee_detail_text)
+                    clean_delivery_fee_detail_text = re.sub('<[^<]+?>', '', delivery_fee_detail_text)
                         # Find all instances of numeric values (with potential commas)
-                    delievery_fees = re.findall(r'\d+,?\d*', clean_delievery_fee_detail_text)
+                    delivery_fees = re.findall(r'\d+,?\d*', clean_delivery_fee_detail_text)
                         # Convert found numbers to integers, considering the commas
-                    delievery_fees_int = [int(n.replace(',', '')) for n in delievery_fees]
+                    delivery_fees_int = [int(n.replace(',', '')) for n in delivery_fees]
                         # The lowest charge is the base charge, which is the first number
-                    lowest_charge = delievery_fees_int[0]
+                    lowest_charge = delivery_fees_int[0]
                         # Calculate the maximum charge by adding the highest additional charge to the base charge
                         # Assuming additional charges are listed after the base charge
-                    additional_charges = delievery_fees_int[1:]  # Skip the first number which is the base charge
+                    additional_charges = delivery_fees_int[1:]  # Skip the first number which is the base charge
                     max_charge = lowest_charge + max(additional_charges) if additional_charges else lowest_charge
                     # Get product code
                     prd_code = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"//div[@class='prod_detail_title' and contains(text(), '제품코드')]/following-sibling::div[1]")))

@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from selenium import webdriver
 import time
 import pandas as pd
@@ -125,7 +126,7 @@ def uploading_action():
                     EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
                 EdgeTool.popupHandler(3, 'onchan')
                 preprocesedSourced_df = pd.read_csv('preprocesedSourced.csv', encoding='utf-8-sig')
-                EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, min_rating, prd_max_num, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True, is_margin_descend=False)
+                EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, min_rating, prd_max_num, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=False)
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted while uploading.\n"
@@ -140,7 +141,7 @@ def monthly_sourcing_uploading_action():
     sourcing_action()
     uploading_action()
     driver.switch_to.window(window_coupang)
-    EdgeTool.delivery_charge_changer('coupang', coupang_prd_list_url, isDeliveryCharge=False)
+    EdgeTool.delivery_charge_changer('coupang', coupang_prd_list_url, isDeliveryCharge=delivery_charge_var_coupang.get() == "True")
     print("[+] Monthly phase end.")
 
 def daily_sourcing_uploading_action():
@@ -153,9 +154,9 @@ def daily_sourcing_uploading_action():
                 naver_sourced_df = EdgeSourcing.daily_sourcing()
                 naver_sourced_isEdited_df = EdgeSourcing.targetListMaker(naver_sourced_df, isDaily=True)
                 driver.switch_to.window(window_onchan)
-                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, min_rating, prd_max_num, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=False, isDeliveryCharge_smart=True, is_margin_descend=False)
+                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, min_rating, prd_max_num, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=False)
                 driver.switch_to.window(window_coupang)
-                EdgeTool.delivery_charge_changer('coupang', coupang_prd_list_url, isDeliveryCharge=False)
+                EdgeTool.delivery_charge_changer('coupang', coupang_prd_list_url, isDeliveryCharge=delivery_charge_var_coupang.get() == "True")
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted while daily.\n"
@@ -428,7 +429,7 @@ def prd_exsition_comparing_action():
 # Initialize the main window
 root = tk.Tk()
 root.title("Automation Tool")
-root.geometry("500x400")
+root.geometry("500x800")
 
 # Create StringVars for entries
 id_var = tk.StringVar()
@@ -442,6 +443,8 @@ coupang_pw_var = tk.StringVar()
 net_profit_ratio_var = tk.StringVar()
 min_rating_var = tk.StringVar()
 prd_max_num_var = tk.StringVar()
+delivery_charge_var_coupang = tk.StringVar(value="False")
+delivery_charge_var_smart = tk.StringVar(value="True")
 
 # Creating Frames for each set of label and entry for better alignment
 frame1 = tk.Frame(root)
@@ -455,6 +458,8 @@ frame8 = tk.Frame(root)
 frame9 = tk.Frame(root)
 frame10 = tk.Frame(root)
 frame11 = tk.Frame(root)
+frame12 = tk.Frame(root)
+frame13 = tk.Frame(root)
 
 # Create Labels
 label_id = tk.Label(frame1, text="Sellha ID")
@@ -468,6 +473,8 @@ label_coupang_pw = tk.Label(frame8, text="Smart PW")
 label_net_profit_ratio = tk.Label(frame9, text="Net profit ratio(%)")
 label_min_rating = tk.Label(frame10, text="Minimum rating(1~5)")
 label_prd_max_num = tk.Label(frame11, text="Maximum number of products uploading per keyword")
+label_delivery_charge_dropdown_coupang = tk.Label(frame12, text="Coupang Delivery charge")
+label_delivery_charge_dropdown_smart = tk.Label(frame13, text="Smart Delivery charge")
 
 # Create Entries
 id_entry = tk.Entry(frame1, textvariable=id_var)
@@ -481,6 +488,9 @@ coupang_pw_entry = tk.Entry(frame8, textvariable=coupang_pw_var, show="*")
 net_profit_ratio_entry = tk.Entry(frame9, textvariable=net_profit_ratio_var)
 min_rating_entry = tk.Entry(frame10, textvariable=min_rating_var)
 prd_max_num_entry = tk.Entry(frame11, textvariable=prd_max_num_var)
+# Create Drop downs
+delivery_charge_dropdown_coupang = ttk.Combobox(frame12, textvariable=delivery_charge_var_coupang, values=["True", "False"])
+delivery_charge_dropdown_smart = ttk.Combobox(frame13, textvariable=delivery_charge_var_smart, values=["True", "False"])
 
 # Packing Labels and Entries in their respective frames
 label_id.pack(side=tk.LEFT)
@@ -505,6 +515,10 @@ label_min_rating.pack(side=tk.LEFT)
 min_rating_entry.pack(side=tk.RIGHT)
 label_prd_max_num.pack(side=tk.LEFT)
 prd_max_num_entry.pack(side=tk.RIGHT)
+label_delivery_charge_dropdown_coupang.pack(side=tk.LEFT)
+delivery_charge_dropdown_coupang.pack(side=tk.RIGHT)
+label_delivery_charge_dropdown_smart.pack(side=tk.LEFT)
+delivery_charge_dropdown_smart.pack(side=tk.RIGHT)
 
 # Packing Frames
 frame1.pack()
@@ -518,6 +532,8 @@ frame8.pack()
 frame9.pack()
 frame10.pack()
 frame11.pack()
+frame12.pack()
+frame13.pack()
 
 # Create buttons for Sourcing and Uploading
 sourcing_btn = tk.Button(root, text="Monthly Sourcing", command=sourcing_action)
@@ -542,7 +558,7 @@ prd_filtering_btn.pack()
 gathering_order_btn.pack()
 
 # Creating and placing the result Text widget
-result_text = tk.Text(root, height=10, width=50)
+result_text = tk.Text(root, height=25, width=60)
 result_text.pack()
 
 # Configure the tag for red text
