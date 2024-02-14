@@ -20,6 +20,8 @@ onchan_prd_stat_url = "https://www.onch3.co.kr/admin_mem_clo_list_2.php?ost=&sec
 onchan_order_stat_coupang_url = "https://www.onch3.co.kr/admin_api_order.html?api_name=coupang"
 onchan_order_stat_smart_url = "https://www.onch3.co.kr/admin_api_order.html?api_name=smartstore"
 onchan_prd_list_url = "https://www.onch3.co.kr/admin_mem_prd_list.html"
+onchan_smart_prd_managenemt_url = "https://www.onch3.co.kr/admin_smart_manage.html#"
+onchan_coupang_prd_managenemt_url = "https://www.onch3.co.kr/admin_coupang_manage.html" 
 coupang_prd_list_url = "https://wing.coupang.com/vendor-inventory/list?searchIds=&startTime=2000-01-01&endTime=2099-12-31&productName=&brandName=&manufacturerName=&productType=&autoPricingStatus=ALL&dateType=productRegistrationDate&dateRangeShowStyle=true&dateRange=all&saleEndDatePeriodType=&includeUsedProduct=&deleteType=false&deliveryMethod=&shippingType=&shipping=&otherType=&productStatus=SAVED,WAIT_FOR_SALE,VALID,SOLD_OUT,INVALID,END_FOR_SALE,APPROVING,IN_REVIEW,DENIED,PARTIAL_APPROVED,APPROVED,ALL&advanceConditionShow=false&displayCategoryCodes=&currentMenuCode=&rocketMerchantVersion=&registrationType=&upBundling=ALL&hasUpBundlingItem=&hasBadImage=false&page=1&countPerPage=50&sortField=vendorInventoryId&desc=true&fromListV2=true&locale=ko_KR&vendorItemViolationType=&coupangAttributeOptimized=FALSE&autoPricingActive="
 smart_prd_list_url = "https://sell.smartstore.naver.com/#/products/origin-list"
 
@@ -228,6 +230,7 @@ def prd_stat_checking_action():
                     EdgeSourcing.pageNavigator(onchan_prd_stat_url)
                     # Deleting or Suspending procedure.
                     out_of_stock_prd_string, out_of_stock_prd_temp_string = EdgeTool.out_of_stock_checker()
+                    unique_prd_name_list = out_of_stock_prd_string.split(',')
                     checking_phase_done = True
             if out_of_stock_prd_string == 'Empty' and out_of_stock_prd_temp_string == 'Empty':
                  coupang_phase_done = True
@@ -270,11 +273,33 @@ def prd_stat_checking_action():
                         EdgeSourcing.pageNavigator(onchan_prd_stat_url)
                         # Deleting or Suspending procedure.
                         EdgeTool.out_of_stock_finisher()
+                        # Move to the product management page and delete the product.
+                        '''
+                        The process of deletion applies only to out-of-stock items. 
+                        For temporarily out-of-stock or option-out-of-stock products, 
+                        they are already marked as unavailable for sale(sale suspention), 
+                        so the deletion process occurs within the filtering function.
+                        '''
+                        EdgeSourcing.pageNavigator(onchan_smart_prd_managenemt_url)
+                        EdgeTool.filtered_prd_deleter('smart', unique_prd_name_list)
+                        EdgeSourcing.pageNavigator(onchan_coupang_prd_managenemt_url)
+                        EdgeTool.filtered_prd_deleter('coupang', unique_prd_name_list)
                         all_phase_done = True
                     elif isLoggedin_onchan:
                         EdgeSourcing.pageNavigator(onchan_prd_stat_url)
                         # EdgeTool.popupHandler(3, 'onchan')
                         EdgeTool.out_of_stock_finisher()
+                        # Move to the product management page and delete the product.
+                        '''
+                        The process of deletion applies only to out-of-stock items. 
+                        For temporarily out-of-stock or option-out-of-stock products, 
+                        they are already marked as unavailable for sale(sale suspention), 
+                        so the deletion process occurs within the filtering function.
+                        '''
+                        EdgeSourcing.pageNavigator(onchan_smart_prd_managenemt_url)
+                        EdgeTool.filtered_prd_deleter('smart', unique_prd_name_list)
+                        EdgeSourcing.pageNavigator(onchan_coupang_prd_managenemt_url)
+                        EdgeTool.filtered_prd_deleter('coupang', unique_prd_name_list)
                         all_phase_done = True
             break
         except ElementClickInterceptedException:
@@ -342,9 +367,14 @@ def prd_filtering_action():
                     onchan_filtering_done = True
             # Onchan
             if not onchan_filtering_done:
-                driver.switch_to.window(window_smart)
+                driver.switch_to.window(window_onchan)
                 EdgeSourcing.pageNavigator(onchan_prd_list_url)
                 EdgeTool.filtered_prd_deleter('onchan', unique_prd_name_list)
+                # Move to the product management page and delete the product.
+                EdgeSourcing.pageNavigator(onchan_smart_prd_managenemt_url)
+                EdgeTool.filtered_prd_deleter('smart', unique_prd_name_list)
+                EdgeSourcing.pageNavigator(onchan_coupang_prd_managenemt_url)
+                EdgeTool.filtered_prd_deleter('coupang', unique_prd_name_list)
                 onchan_filtering_done = True
             print("[+] Filtering end.")
             EdgeTool.dummy_deleter(base_path, 'suspended_prd')
@@ -414,7 +444,7 @@ def prd_exsition_comparing_action():
                 smart_checking_done = True
             # Onchan
             if not onchan_checking_done:
-                driver.switch_to.window(window_smart)
+                driver.switch_to.window(window_onchan)
                 EdgeSourcing.pageNavigator(onchan_prd_list_url)
                 EdgeTool.prd_exsition_comparer('onchan')
                 onchan_checking_done = True

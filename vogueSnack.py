@@ -651,6 +651,63 @@ class Tool:
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
 
+    def onchan_prd_management_deleter(self, store_name, prd_name_list):
+         # Supposse that we navivate to the product management url.
+        if len(prd_name_list) != 0:
+            print(f"[+] {store_name}: Product deletion process start in management page .")
+            for i in range(len(prd_name_list)):
+                while True:
+                    try:
+                        searchbox = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="{store_name}_search_txt"]')))
+                        time.sleep(0.5)
+                        searchbox.clear()
+                        time.sleep(0.5)
+                        searchbox.send_keys(prd_name_list[i])
+                        break
+                    except Exception:
+                        self.driver.refresh()
+                time.sleep(0.5)
+                search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/center/div/div/div/div/div/div[@class="{store_name}_search_box"]/a')))
+                time.sleep(0.5)
+                search_btn.click()
+                percent = int(((i)/len(prd_name_list))*100)
+                print(f"\r [*] {percent}% complete..", end='')
+                if percent == 100:
+                    # Print a newline character at the end to move the cursor to the next line
+                    print()
+                counter = 0
+                while True:
+                    try:
+                        # print("\r [*] Wait for the table loading...", end='')
+                        prd_checkbox_elements = WebDriverWait(self.driver, 5).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@type="checkbox"]')))
+                        # print()
+                        # print(" [*] Table loaded successfully.")
+                        if len(prd_checkbox_elements) > 1:
+                            isPrd = True
+                        break
+                    except Exception:
+                        counter += 1
+                        if counter == 2:
+                            print()
+                            print(" [*] There are no result.")
+                            isPrd = False
+                            break
+                if isPrd:
+                    check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/center/div/div/div/div/div/ul[@class="{store_name}_prd_list"]/li/div[1]/input')))
+                    time.sleep(0.5)
+                    check_all_btn.click()
+                    delete_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'/html/body/center/div/div/div/div/div/div[@class="{store_name}_top_btn"]/a[@class="sel_entry_del"]')))
+                    time.sleep(0.5)
+                    delete_btn.click()
+                    time.sleep(0.5)
+                    self.popupHandler(100, 'onchan')
+                    self.popupHandler(100, 'onchan')
+            message_smart_out_of_stock = " [*] Onchan(suspended, rejected): item deletion success."
+            print(message_smart_out_of_stock)
+        elif len(prd_name_list) == 0:
+            print(" [*] Onchan(suspended, rejected): Item not found.")
+            return
+
     def dummy_deleter(self, folder_path, target_prefix):
         # Delete dummy files
         # os.remove('/Users/papag/OneDrive/src/Projects/vogueSnack/스마트스토어상품_할인률추가.xlsx')
