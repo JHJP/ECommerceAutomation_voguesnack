@@ -27,7 +27,7 @@ class Sourcing:
                 print("[+] Move to the opend tab.")
                 self.driver.get(url)
                 time.sleep(2)
-                self.driver.find_element(By.XPATH, '//*[@id="root"]/div/div[1]/div/div/div[4]/div[1]/ul/li[2]/button').click()
+                self.driver.find_element(By.XPATH, '//button[@class="Login_btn_more__1pQwH"]').click()
                 time.sleep(2)
                 # move to the opend window
                 windows = self.driver.window_handles
@@ -82,15 +82,15 @@ class Sourcing:
             message = "[!] Navigation failed.\n"
             self.tool.append_to_text_widget(message, "red")
         else:
-            print("[+] Navigation successful")
+            print(" [*] Navigation successful")
 
     def categoryButtonClicker(self,target_num):
-        WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="root"]/section/main/div[2]/div/div/div[3]/div[1]/div/button')))
-        button1 = self.driver.find_element(By.XPATH, '//*[@id="root"]/section/main/div[2]/div/div/div[3]/div[1]/div/button')
+        WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located((By.XPATH, '//button[text()="1분류"]')))
+        button1 = self.driver.find_element(By.XPATH, '//button[text()="1분류"]')
         button1.click()
         time.sleep(1)
-        WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="root"]/section/main/div[2]/div[1]/div/div[3]/div[1]/div/ul/li[{target_num}]/button')))
-        button2 = self.driver.find_element(By.XPATH, f'//*[@id="root"]/section/main/div[2]/div[1]/div/div[3]/div[1]/div/ul/li[{target_num}]/button')
+        WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located((By.XPATH, f'//button[text()="전체"]')))
+        button2 = self.driver.find_element(By.XPATH, f'//button[text()="전체"]')
         button2.click()
 
         error_message = "error occur."
@@ -313,7 +313,7 @@ class Sourcing:
                             break
                         except StaleElementReferenceException:
                             print(f"Stale element Exception at domain {i}, index {j}")
-                percent = int(((i+1)/7)*100)
+                percent = int(((i-2)/7)*100)
                 print(f"\r [*] {percent}% complete..", end='')
                 if percent == 100:
                     # Print a newline character at the end to move the cursor to the next line
@@ -333,6 +333,7 @@ class Uploading:
     def sending_store(self, checkboxes_numb, originalTarget, btn_path, store_name, net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge):
         # print(f"[+] Sending to {store_name} store start." )
         while True:
+            counter = 0
             try:
                 sending_store_btn = WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located(
                     (By.XPATH, btn_path)))
@@ -346,7 +347,12 @@ class Uploading:
                 self.tool.append_to_text_widget(message, "red")
                 message = "[*] Scroll down little bit and try again.\n"
                 self.tool.append_to_text_widget(message, "blue")
-                self.tool.scroll_downer(250)
+                if counter%2 == 0:
+                    self.tool.scroll_downer(250)
+                    counter += 1
+                elif counter%2 != 0:
+                    self.tool.scroll_to_top()
+                    counter += 1
         # Keyword appender
         time.sleep(3)
         parent_element = self.driver.find_element(By.CSS_SELECTOR, f'.{store_name}_modi_layer')
@@ -446,6 +452,7 @@ class Uploading:
                     break
                 elif store_name == 'smart':
                     while True:
+                        counter = 0
                         try:
                             edit_button.click()
                             break
@@ -454,7 +461,12 @@ class Uploading:
                             self.tool.append_to_text_widget(message, "red")
                             message = "[*] Scroll down little bit and try again.\n"
                             self.tool.append_to_text_widget(message, "blue")
-                            self.tool.scroll_downer(250)
+                            if counter%2 == 0:
+                                self.tool.scroll_downer(250)
+                                counter += 1
+                            elif counter%2 != 0:
+                                self.tool.scroll_to_top()
+                                counter += 1
                     time.sleep(0.5)
                     # Calculate the retail price
                     omc = 0.0363 # Order managing commission
@@ -1451,16 +1463,16 @@ class Tool:
                 counter = 0
                 while True:
                     try:
-                        print("\r [*] Wait for the table loading...", end='')
+                        # print("\r [*] Wait for the table loading...", end='')
                         WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
-                        print()
-                        print(" [*] Table loaded successfully.")
+                        # print()
+                        # print(" [*] Table loaded successfully.")
                         counter = 0
                         break
                     except TimeoutException:
                         counter += 1
                         if counter == 3:
-                            input(" [!] No items found.")
+                            print(" [*] No items found.")
                 table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table')))
                 # Assuming the scrollable container is a direct parent of the table
                 scrollable_container = table.find_element(By.XPATH, "./..")
@@ -1504,16 +1516,16 @@ class Tool:
                         self.driver.refresh()
                         while True:
                             try:
-                                print("\r [*] Wait for the table loading...", end='')
+                                # print("\r [*] Wait for the table loading...", end='')
                                 WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
-                                print()
-                                print(" [*] Table loaded successfully.")
+                                # print()
+                                # print(" [*] Table loaded successfully.")
                                 break
                             except TimeoutException:
                                 counter += 1
                                 if counter == 3:
-                                    print()
-                                    print(" [*] There are no result.")
+                                    # print()
+                                    print(" [*] No items found.")
                                     break
                         if counter != 3:
                             table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table')))
@@ -1592,6 +1604,9 @@ class Tool:
             elif rating <= rate_lowering:
                 continue
         return counter, max_delivery_charge_list, lowest_delivery_charge_list
+
+    def scroll_to_top(self):
+        self.driver.execute_script("window.scrollTo(0, 0);")
 
     def scroll_downer(self, howmuch):
         # Scroll down a little bit

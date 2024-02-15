@@ -65,6 +65,10 @@ def initialize_webdriver():
     EdgeTool = Tool(driver, result_text)
     EdgeSourcing = Sourcing(driver, tool=EdgeTool)
     EdgeUploading = Uploading(driver, tool=EdgeTool)
+
+    set_default_text()
+    open_tabs()
+
     print("[+] WebDriver Initialized")
 
 def sourcing_action():
@@ -281,9 +285,9 @@ def prd_stat_checking_action():
                         so the deletion process occurs within the filtering function.
                         '''
                         EdgeSourcing.pageNavigator(onchan_smart_prd_managenemt_url)
-                        EdgeTool.filtered_prd_deleter('smart', unique_prd_name_list)
+                        EdgeTool.onchan_prd_management_deleter('smart', unique_prd_name_list)
                         EdgeSourcing.pageNavigator(onchan_coupang_prd_managenemt_url)
-                        EdgeTool.filtered_prd_deleter('coupang', unique_prd_name_list)
+                        EdgeTool.onchan_prd_management_deleter('coupang', unique_prd_name_list)
                         all_phase_done = True
                     elif isLoggedin_onchan:
                         EdgeSourcing.pageNavigator(onchan_prd_stat_url)
@@ -297,9 +301,9 @@ def prd_stat_checking_action():
                         so the deletion process occurs within the filtering function.
                         '''
                         EdgeSourcing.pageNavigator(onchan_smart_prd_managenemt_url)
-                        EdgeTool.filtered_prd_deleter('smart', unique_prd_name_list)
+                        EdgeTool.onchan_prd_management_deleter('smart', unique_prd_name_list)
                         EdgeSourcing.pageNavigator(onchan_coupang_prd_managenemt_url)
-                        EdgeTool.filtered_prd_deleter('coupang', unique_prd_name_list)
+                        EdgeTool.onchan_prd_management_deleter('coupang', unique_prd_name_list)
                         all_phase_done = True
             break
         except ElementClickInterceptedException:
@@ -372,9 +376,9 @@ def prd_filtering_action():
                 EdgeTool.filtered_prd_deleter('onchan', unique_prd_name_list)
                 # Move to the product management page and delete the product.
                 EdgeSourcing.pageNavigator(onchan_smart_prd_managenemt_url)
-                EdgeTool.filtered_prd_deleter('smart', unique_prd_name_list)
+                EdgeTool.onchan_prd_management_deleter('smart', unique_prd_name_list)
                 EdgeSourcing.pageNavigator(onchan_coupang_prd_managenemt_url)
-                EdgeTool.filtered_prd_deleter('coupang', unique_prd_name_list)
+                EdgeTool.onchan_prd_management_deleter('coupang', unique_prd_name_list)
                 onchan_filtering_done = True
             print("[+] Filtering end.")
             EdgeTool.dummy_deleter(base_path, 'suspended_prd')
@@ -584,7 +588,7 @@ prd_filtering_btn = tk.Button(root, text="Product filtering", command=prd_filter
 gathering_order_btn = tk.Button(root, text="Order gathering", command=gathering_order_action)
 prd_exsition_comparing_btn = tk.Button(root, text="Product existion checking", command=prd_exsition_comparing_action
 )
-# webdriver_btn.pack()
+webdriver_btn.pack()
 # sourcing_btn.pack()
 # uploading_btn.pack()
 monthly_btn.pack()
