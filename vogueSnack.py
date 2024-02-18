@@ -663,6 +663,25 @@ class Tool:
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
 
+    def login_checker(self, window_onchan, onchan_login_url, window_coupang, coupang_login_url):
+        # onchan login checker
+        self.driver.switch_to.window(window_onchan)
+        self.driver.get(onchan_login_url)
+        try:
+            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//input[@name="username"]')))
+            isLoggedin_onchan = False
+        except Exception:
+            isLoggedin_onchan = True
+        # coupang login checker
+        self.driver.switch_to.window(window_coupang)
+        self.driver.get(coupang_login_url)
+        try:
+            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//input[@name="username"]')))
+            isLoggedin_coupang = False
+        except Exception:
+            isLoggedin_coupang = True
+        return isLoggedin_onchan, isLoggedin_coupang
+
     def onchan_prd_management_deleter(self, store_name, prd_name_list):
          # Supposse that we navivate to the product management url.
         if len(prd_name_list) != 0:
@@ -690,12 +709,8 @@ class Tool:
                 counter = 0
                 while True:
                     try:
-                        # print("\r [*] Wait for the table loading...", end='')
-                        prd_checkbox_elements = WebDriverWait(self.driver, 5).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@type="checkbox"]')))
-                        # print()
-                        # print(" [*] Table loaded successfully.")
-                        if len(prd_checkbox_elements) > 1:
-                            isPrd = True
+                        WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, '//div[@class="prd_code"]')))
+                        isPrd = True
                         break
                     except Exception:
                         counter += 1
@@ -715,6 +730,7 @@ class Tool:
                     self.popupHandler(100, 'onchan')
                     self.popupHandler(100, 'onchan')
             message_smart_out_of_stock = " [*] Onchan(suspended, rejected): item deletion success."
+            print()
             print(message_smart_out_of_stock)
         elif len(prd_name_list) == 0:
             print(" [*] Onchan(suspended, rejected): Item not found.")
@@ -839,7 +855,55 @@ class Tool:
 
     def filtered_prd_deleter(self, store_name, prd_name_list):
         if store_name == 'coupang':
+            self.driver.refresh()
+            time.sleep(0.5)
             print(f"[+] {store_name}: Filtering process start.")
+            if len(prd_name_list) != 0:
+                # Delete product that suspended in smart store.
+                suspended_prd_smart = ','.join(f'{item}' for item in prd_name_list)
+                coupang_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[1]/span/span[2]/textarea')))
+                time.sleep(0.5)
+                coupang_input_box.clear()
+                time.sleep(0.5)
+                coupang_input_box.send_keys(suspended_prd_smart)
+                coupang_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[2]/dd/button[2]')))
+                time.sleep(0.5)
+                coupang_search_btn.click()
+                while True:
+                    counter = 0
+                    try:
+                        while True:
+                            try:
+                                print("\r [*] Wait for the table loading...", end='')
+                                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                                print()
+                                print(" [*] Table loaded successfully.")
+                                break
+                            except TimeoutException:
+                                counter += 1
+                                if counter == 3:
+                                    print()
+                                    print(" [*] There is no result.")
+                                    break
+                        coupang_searched_num_element = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
+                        coupang_searched_num = coupang_searched_num_element.text
+                        if coupang_searched_num != "0":
+                            coupang_select_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
+                            time.sleep(0.5)
+                            coupang_select_all_btn.click()
+                            coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/button[3]')))
+                            time.sleep(0.5)
+                            coupang_delete_btn.click()
+                            coupang_confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="container-wing-v2"]/div/div/div[@class="alert-buttons"]/button[contains(@class, "confirm") and contains(@class, "alert-confirm")]')))
+                            time.sleep(0.5)
+                            coupang_confirm_btn.click()
+                            time.sleep(5)
+                            self.driver.refresh()
+                        elif coupang_searched_num == "0":
+                            break
+                    except Exception as e:
+                        self.driver.refresh()
+                return
             prd_name_list = []
             all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[2]/span/span[1]/label')))
             time.sleep(0.5)
@@ -882,6 +946,13 @@ class Tool:
                     counter = 0
                     try:
                         for i in range(int(coupang_searched_num)):
+                            percent = int(((checked_item_num)/int(coupang_searched_num))*100)
+                            # percent = int(((i+1)/int(coupang_searched_num))*100)
+                            print(f"\r [*] {percent}% complete..", end='')
+                            if percent == 100:
+                                # Print a newline character at the end to move the cursor to the next line
+                                print()
+                                return prd_name_list
                             prd_name_full = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[{i+1}]/td[5]/div[@class="product-name-block"]/span')))
                             time.sleep(0.5)
                             prd_name = prd_name_full.text.split()[0]
@@ -890,12 +961,6 @@ class Tool:
                             time.sleep(0.5)
                             prd_checkbox.click()
                             checked_item_num += 1
-                            percent = int(((checked_item_num)/int(coupang_searched_num))*100)
-                            # percent = int(((i+1)/int(coupang_searched_num))*100)
-                            print(f"\r [*] {percent}% complete..", end='')
-                            if percent == 100:
-                                # Print a newline character at the end to move the cursor to the next line
-                                print()
                         self.driver.execute_script("window.scrollTo(0, 0);")
                         time.sleep(0.5)
                         coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/button[3]')))
@@ -937,12 +1002,14 @@ class Tool:
                             print()
                             print(" [*] There are no result.")
                             break
-                return prd_name_list
+                # return prd_name_list
             elif coupang_searched_num == "0":
                 message_coupang_out_of_stock = " [*] Coupang(suspended, rejected): Item not found."
                 print(message_coupang_out_of_stock)
                 return prd_name_list
         if store_name == 'smart':
+            self.driver.refresh()
+            time.sleep(0.5)
             if len(prd_name_list) != 0:
                 print(f"[+] {store_name}: Filtering process start.")
                 formatted_string = ','.join(f'{item}' for item in prd_name_list)
@@ -950,6 +1017,8 @@ class Tool:
                 time.sleep(0.5)
                 smart_seller_prd_code_check.click()
                 smart_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[2]/textarea')))
+                time.sleep(0.5)
+                smart_input_box.clear()
                 time.sleep(0.5)
                 smart_input_box.send_keys(formatted_string)
                 smart_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[2]/div/button[1]')))
@@ -983,7 +1052,7 @@ class Tool:
                     smart_confirm_btn.click()
                     self.popupHandler(5, 'smart')
                     time.sleep(0.5)
-                    # message_smart_out_of_stock = f" [*] Smart(suspended, rejected): item deletion {result}."
+                    message_smart_out_of_stock = f" [*] Smart(suspended, rejected): item deletion success."
                 else:
                     message_smart_out_of_stock = " [*] Smart(suspended, rejected): Item not found."
                 print(message_smart_out_of_stock)
@@ -991,8 +1060,10 @@ class Tool:
                 print(" [*] Smart(suspended, rejected): Item not found.")
             # Doing filtering in smart store.
             smart_prd_name_list = []
-            smart_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[2]/textarea')))
-            smart_input_box.clear()
+            # smart_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[2]/textarea')))
+            # smart_input_box.clear()
+            self.driver.refresh()
+            time.sleep(0.5)
             on_saling_checker = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[2]/div/div/div/label[3]')))
             time.sleep(0.5)
             on_saling_checker.click()
@@ -1035,21 +1106,31 @@ class Tool:
                 while True:
                     counter = 0
                     try:
-                        for i in range(int(smart_searched_num)):
-                            prd_name_full = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[3]/div[1]/div[{i+1}]/div[5]')))
+                        if smart_searched_num == '1':
+                            prd_name_full = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[3]/div[1]/div/div[5]')))
                             time.sleep(0.5)
                             prd_name = prd_name_full.text
                             smart_prd_name_list.append(prd_name)
-                            prd_checkbox = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[3]/div[1]/div[{i+1}]/div[1]/div/span[1]/i[2]')))
+                            prd_checkbox = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[3]/div[1]/div/div[1]/div/span[1]/i[2]')))
                             time.sleep(0.5)
                             prd_checkbox.click()
-                            checked_item_num += 1
-                            percent = int(((checked_item_num)/int(smart_searched_num))*100)
-                            # percent = int(((i+1)/int(coupang_searched_num))*100)
-                            print(f"\r [*] {percent}% complete..", end='')
-                            if percent == 100:
-                                # Print a newline character at the end to move the cursor to the next line
-                                print()
+                        else:
+                            for i in range(int(smart_searched_num)):
+                                percent = int(((checked_item_num)/int(smart_searched_num))*100)
+                                print(f"\r [*] {percent}% complete..", end='')
+                                if percent == 100:
+                                    # Print a newline character at the end to move the cursor to the next line
+                                    print()
+                                    prd_name_list.extend(smart_prd_name_list)
+                                    return prd_name_list
+                                prd_name_full = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[3]/div[1]/div[{i+1}]/div[5]')))
+                                time.sleep(0.5)
+                                prd_name = prd_name_full.text
+                                smart_prd_name_list.append(prd_name)
+                                prd_checkbox = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[3]/div[1]/div[{i+1}]/div[1]/div/span[1]/i[2]')))
+                                time.sleep(0.5)
+                                prd_checkbox.click()
+                                checked_item_num += 1
                         # self.driver.execute_script("window.scrollTo(0, 0);")
                         time.sleep(0.5)
                         smart_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[1]/div[1]/div/div[1]/button')))
@@ -1058,7 +1139,7 @@ class Tool:
                         smart_confirm_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div/div[@class="modal-content"]/div/div/span/button[contains(@class, "btn") and contains(@class, "btn-primary")]'))) 
                         time.sleep(0.5)
                         smart_confirm_btn.click()
-                        edited_result_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div/div/div[2]/div/div/p/strong'))) 
+                        edited_result_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//strong[@class="text-primary"]'))) 
                         edited_result = edited_result_element.text
                         self.popupHandler(5, 'smart')
                         time.sleep(0.5)
@@ -1079,6 +1160,24 @@ class Tool:
                             break
                         if edited_result == '0':
                             print(" [*] There are products that can not be deleted.")
+                            smart_prd_name_list = []
+                            break
+                        # Remove the product name that can not be deleted in smart store even though its selling suspended.
+                        if edited_result != '0':
+                            if edited_result != smart_searched_num:
+                                smart_searched_num_element = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[1]/h3/span')))
+                                smart_searched_num = smart_searched_num_element.text
+                                if smart_searched_num == '1':
+                                    prd_name_full = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[3]/div[1]/div/div[5]')))
+                                    time.sleep(0.5)
+                                    prd_name = prd_name_full.text
+                                    smart_prd_name_list.remove(prd_name)
+                                else:
+                                    for i in range(int(smart_searched_num)):
+                                        prd_name_full = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[2]/div[3]/div/div/div/div/div[3]/div[1]/div[{i+1}]/div[5]')))
+                                        time.sleep(0.5)
+                                        prd_name = prd_name_full.text
+                                        smart_prd_name_list.remove(prd_name)
                             break
                     except Exception as e:
                         # coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
@@ -1111,8 +1210,8 @@ class Tool:
                             print()
                             print(" [*] There are no result.")
                             break
-                prd_name_list.extend(smart_prd_name_list)
-                return prd_name_list
+                # prd_name_list.extend(smart_prd_name_list)
+                # return prd_name_list
         if store_name =='onchan':
             if len(prd_name_list) != 0:
                 print(f"[+] {store_name}: Filtering process start.")
@@ -1186,7 +1285,7 @@ class Tool:
         time.sleep(0.5)
         order_send_btn.click()
         self.popupHandler(3, 'onchan')
-        self.driver.switch_to.window(self.driver.window_handles[1])
+        self.driver.switch_to.window(self.driver.window_handles[5])
         order_send_point_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@id='order_send_btn']")))
         time.sleep(0.5)
         order_send_point_btn.click()
@@ -1196,7 +1295,7 @@ class Tool:
             point_recharge_btn.click()
             print(" [*] Recharge the point and try again.")
             return
-        self.driver.switch_to.window(self.driver.window_handles[0])
+        self.driver.switch_to.window(self.driver.window_handles[2])# comp back to the onchan page.
         confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@class='order_lightbox']/div[@class='order_complete_box modal']/div[@class='modal_btn_wrap']/a[@class='confirm_btn']")))
         time.sleep(0.5)
         confirm_btn.click()
@@ -1473,6 +1572,8 @@ class Tool:
                         counter += 1
                         if counter == 3:
                             print(" [*] No items found.")
+                            print(f"[+] Delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge} end.")
+                            return
                 table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table')))
                 # Assuming the scrollable container is a direct parent of the table
                 scrollable_container = table.find_element(By.XPATH, "./..")
@@ -1490,6 +1591,8 @@ class Tool:
                             if percent == 100:
                                 # Print a newline character at the end to move the cursor to the next line
                                 print()
+                                print(f"[+] Delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge} end.")
+                                return
                             time.sleep(0.5)
                             shipping_edit_btn = WebDriverWait(self.driver, 2).until(EC.presence_of_element_located((By.XPATH, f"//*[@id='rootContainer']/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[{i+1}]/td[27]")))
                             time.sleep(0.5)
@@ -1535,7 +1638,7 @@ class Tool:
                             self.driver.execute_script(scroll_script, scrollable_container)
                         if counter ==3:
                             break
-                print(f"[+] Delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge} end.")
+                # print(f"[+] Delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge} end.")
     
     # Automate checking above the setted rate.
     def product_checker(self, rate_lowering, max_num, is_margin_descend):
