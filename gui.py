@@ -257,7 +257,10 @@ def prd_stat_checking_action():
                 EdgeSourcing.pageNavigator(onchan_prd_stat_url)
                 # Deleting or Suspending procedure.
                 out_of_stock_prd_string, out_of_stock_prd_temp_string = EdgeTool.out_of_stock_checker()
-                unique_prd_name_list = out_of_stock_prd_string.split(',')
+                out_of_stock_prd_list = out_of_stock_prd_string.split(',')
+                out_of_stock_prd_temp_list = out_of_stock_prd_temp_string.split(',')
+                out_of_stock_prd_list.extend(out_of_stock_prd_temp_list)
+                unique_prd_name_list = [i for i in out_of_stock_prd_list if i != 'Empty']
                 checking_phase_done = True
             if out_of_stock_prd_string == 'Empty' and out_of_stock_prd_temp_string == 'Empty':
                  coupang_phase_done = True
