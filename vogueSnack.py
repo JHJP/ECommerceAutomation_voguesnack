@@ -11,7 +11,9 @@ from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.keys import Keys
 import tkinter as tk
 import re
-import tkinter.messagebox as messagebox   # Import the function from shared.py
+import tkinter.messagebox as messagebox 
+from datetime import datetime, timedelta
+import dateutil.relativedelta
 
 class Sourcing:
     def __init__(self, driver, tool=None):
@@ -106,11 +108,37 @@ class Sourcing:
     def csvButtonClicker(self, click1):
         if click1:
             WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="result"]/section/div[2]/div[1]/div[1]/button')))
-            button1 = self.driver.find_element(By.XPATH, '//*[@id="result"]/section/div[2]/div[1]/div[1]/button')
-            button1.click()
+            excel_btn = self.driver.find_element(By.XPATH, '//*[@id="result"]/section/div[2]/div[1]/div[1]/button')
+            excel_btn.click()
+            # Download current date data
             WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="result"]/section/div[2]/div[1]/div[1]/div/div/div[2]/button/div')))
-            button2 = self.driver.find_element(By.XPATH, '//*[@id="result"]/section/div[2]/div[1]/div[1]/div/div/div[2]/button/div')
-            button2.click()
+            download_btn = self.driver.find_element(By.XPATH, '//*[@id="result"]/section/div[2]/div[1]/div[1]/div/div/div[2]/button/div')
+            download_btn.click()
+            while True:
+                isDownloaded = self.downloadChecker('/Users/papag/Downloads', "셀하 아이템 발굴 EXCEL_전체", first_phase=True)
+                if isDownloaded:
+                    break
+            if isDownloaded:
+                # Download 1 year and 1 month before data from the current date
+                date_placeholder_element = WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="엑셀 날짜 선택"]')))
+                new_date = datetime.now() - dateutil.relativedelta.relativedelta(years=1) + dateutil.relativedelta.relativedelta(months=1)
+                new_date_str = new_date.strftime('%Y-%m')  # Format the date as 'YYYY-MM'
+                    # Update the element's value with the new date
+                self.driver.execute_script("arguments[0].removeAttribute('readonly')", date_placeholder_element)
+                time.sleep(0.5)
+                # Create an ActionChains object
+                actions = ActionChains(self.driver)
+                # Click the input box, select all text, delete it, type the new date, and press Enter
+                actions.click(date_placeholder_element)\
+                    .key_down(Keys.CONTROL).send_keys('a').key_up(Keys.CONTROL)\
+                    .send_keys(Keys.BACKSPACE)\
+                    .send_keys(new_date_str)\
+                    .send_keys(Keys.ENTER)\
+                    .perform()
+                time.sleep(0.5)
+                WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="result"]/section/div[2]/div[1]/div[1]/div/div/div[2]/button/div')))
+                download_btn = self.driver.find_element(By.XPATH, '//*[@id="result"]/section/div[2]/div[1]/div[1]/div/div/div[2]/button/div')
+                download_btn.click()
         if click1==False:
             WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="result"]/section/div[2]/div[1]/div[1]/div/div/div[2]/button/div')))
             button2 = self.driver.find_element(By.XPATH, '//*[@id="result"]/section/div[2]/div[1]/div[1]/div/div/div[2]/button/div')
@@ -256,10 +284,10 @@ class Sourcing:
             return preprocessed_df
     
     # Make keyword list from the sorted dataframe.
-    def preProcessor(self, df, search_volume):
-        counter = 0
-        sourced_list = []
-        sourced_df = pd.DataFrame([], columns=df.columns)
+    def preProcessor(self, df, min_searched_volume, sourcing_size):
+        # counter = 0
+        # sourced_list = []
+        # sourced_df = pd.DataFrame([], columns=df.columns)
 
         df.drop_duplicates(subset='키워드', inplace=True)
         df['진짜경쟁률'] = df['상품수'] / df['검색량']
@@ -273,18 +301,23 @@ class Sourcing:
         df.drop(df[df['카테고리'].str.startswith('국내패키지')].index, inplace=True)
         df.drop(df[df['쇼핑성키워드'] == False].index, inplace=True)
         df.drop(df[df['브랜드점유율']>=0.5].index, inplace=True)
-        while counter < 5:
-            df.drop(df[df['검색량']<=search_volume].index, inplace=True)
-            df.sort_values(by='진짜경쟁률', ascending=True, inplace=True)
-            sourced_list.append(df.head(50))
-            counter += 1
-            search_volume += 10000
-        sourced_df = pd.concat(sourced_list)
-        sourced_df.drop_duplicates(subset='키워드', inplace=True)
-        sourced_df.sort_values(by='진짜경쟁률', ascending=True, inplace=True)
-        sourced_df.to_csv('sourced.csv', encoding='utf-8-sig', index = False)
-        
-        return sourced_df
+        # while counter < 5:
+        #     df.drop(df[df['검색량']<=min_searched_volume].index, inplace=True)
+        #     df.sort_values(by='진짜경쟁률', ascending=True, inplace=True)
+        #     sourced_list.append(df.head(sourcing_size))
+        #     counter += 1
+        #     min_searched_volume += 10000
+        # sourced_df = pd.concat(sourced_list)
+        # sourced_df.drop_duplicates(subset='키워드', inplace=True)
+        # sourced_df.sort_values(by='진짜경쟁률', ascending=True, inplace=True)
+        # sourced_df.to_csv('sourced.csv', encoding='utf-8-sig', index = False)
+        # return sourced_df
+
+        df.drop(df[df['검색량']<=min_searched_volume].index, inplace=True)
+        df.sort_values(by='진짜경쟁률', ascending=True, inplace=True)
+        df.drop_duplicates(subset='키워드', inplace=True)
+        df = df.head(sourcing_size)
+        return df
 
     def daily_sourcing(self):
         files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
@@ -1831,7 +1864,7 @@ class Tool:
                 alert.accept()  # Use alert.dismiss() if you want to cancel the alert
                 # print(" [*] Alert closed")
                 break
-            except NoAlertPresentException:
+            except Exception:
                 time.sleep(1)
                 alert_text = " [*] There is no javascript alert."
                 counter += 1

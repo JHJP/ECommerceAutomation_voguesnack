@@ -7,6 +7,8 @@ from vogueSnack import Sourcing, Uploading, Tool
 from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.webdriver.edge.options import Options as EdgeOptions
 from tkinter import messagebox
+from datetime import datetime, timedelta
+import dateutil.relativedelta
 # After adding edge webdriver path to environment variable, you can execute below code.(ex. )
 
 url = "https://sellha.kr/member/login"
@@ -49,7 +51,9 @@ def set_default_text():
     coupang_pw_entry.insert(0,"9w_kPvtu8Qcj93u")
     net_profit_ratio_entry.insert(0, "5")
     min_rating_entry.insert(0, "4.5")
-    prd_max_num_entry.insert(0, "20")
+    prd_max_num_entry.insert(0, "15")
+    min_searched_num_entry.insert(0, "10000")
+    sourcing_size_entry.insert(0, "150")
 
 def initialize_webdriver():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
@@ -71,14 +75,20 @@ def initialize_webdriver():
 
 def sourcing_action():
     global driver, EdgeSourcing, EdgeTool, isloggedin_sellha
-    # isloggedin_sellha = False
-    isDownloaded_sellha_df = EdgeSourcing.downloadChecker('/Users/papag/Downloads', "셀하 아이템 발굴 EXCEL_전체", first_phase=True)
+    min_searched_num = int(min_searched_num_var.get())
+    sourcing_size = int(sourcing_size_var.get())
+    current_date = datetime.now()
+    before_date = datetime.now() - dateutil.relativedelta.relativedelta(years=1) + dateutil.relativedelta.relativedelta(months=1)
+    current_formatted_date = f"{current_date.year}-{current_date.month}"
+    before_formatted_date = f"{before_date.year}-{before_date.month}"
+    isDownloaded_sellha_df_current = EdgeSourcing.downloadChecker('/Users/papag/Downloads', f"셀하 아이템 발굴 EXCEL_전체_{current_formatted_date}", first_phase=True)
+    # isDownloaded_sellha_df_before = EdgeSourcing.downloadChecker('/Users/papag/Downloads', f"셀하 아이템 발굴 EXCEL_전체_{before_formatted_date}", first_phase=False)
     isDownloaded_sourced = EdgeSourcing.downloadChecker('/Users/papag/OneDrive/src/Projects/vogueSnack', "sourced.csv", first_phase=True)
     print("[+] Sourcing phase start.")
     while True:
             try:
                 driver.switch_to.window(window_sellha)
-                if not isDownloaded_sellha_df:
+                if not isDownloaded_sellha_df_current:
                     sellha_id = id_var.get()
                     sellha_pw = password_var.get()
                     # isloggedin_sellha = EdgeSourcing.login('sellha',url,sellha_id,sellha_pw,'email', 'password',loginbtn1, False)
@@ -87,22 +97,30 @@ def sourcing_action():
                         EdgeTool.popupHandler(5, 'sellha')
                     EdgeTool.popupHandler(5, 'sellha')
                     EdgeSourcing.pageNavigator(url2)
-                    time.sleep(5)
+                    time.sleep(0.5)
                     EdgeSourcing.categoryButtonClicker(1)#All
-                    time.sleep(5)
+                    time.sleep(0.5)
                     EdgeSourcing.csvButtonClicker(True)
-                    time.sleep(5)
-                    sellha_df = EdgeSourcing.downloadChecker('/Users/papag/Downloads', "셀하 아이템 발굴 EXCEL_전체", first_phase=False)
-                    EdgeSourcing.preProcessor(sellha_df, 10000)
+                    time.sleep(0.5)
+                    sellha_df_current = EdgeSourcing.downloadChecker('/Users/papag/Downloads', f"셀하 아이템 발굴 EXCEL_전체_{current_formatted_date}", first_phase=False)
+                    sellha_df_before = EdgeSourcing.downloadChecker('/Users/papag/Downloads', f"셀하 아이템 발굴 EXCEL_전체_{before_formatted_date}", first_phase=False)
+                    sellha_df_current_preProcessed = EdgeSourcing.preProcessor(sellha_df_current, min_searched_num, sourcing_size)
+                    sellha_df_before_preProcessed = EdgeSourcing.preProcessor(sellha_df_before, min_searched_num, sourcing_size)
+                    merged_df = pd.concat([sellha_df_current_preProcessed, sellha_df_before_preProcessed], axis=0)
+                    merged_df.to_csv('sourced.csv', encoding='utf-8-sig', index = False)
                     EdgeSourcing.targetListMaker(pd.read_csv('sourced.csv', encoding='utf-8-sig'), False)
                     break
-                if isDownloaded_sellha_df:
+                if isDownloaded_sellha_df_current:
                     if isDownloaded_sourced:
                         EdgeSourcing.targetListMaker(pd.read_csv('sourced.csv', encoding='utf-8-sig'), isDaily=False)
                         break
                     if not isDownloaded_sourced:
-                        sellha_df = EdgeSourcing.downloadChecker('/Users/papag/Downloads', "셀하 아이템 발굴 EXCEL_전체", first_phase=False)
-                        EdgeSourcing.preProcessor(sellha_df, 10000)
+                        sellha_df_current = EdgeSourcing.downloadChecker('/Users/papag/Downloads', f"셀하 아이템 발굴 EXCEL_전체_{current_formatted_date}", first_phase=False)
+                        sellha_df_before = EdgeSourcing.downloadChecker('/Users/papag/Downloads', f"셀하 아이템 발굴 EXCEL_전체_{before_formatted_date}", first_phase=False)
+                        sellha_df_current_preProcessed = EdgeSourcing.preProcessor(sellha_df_current, min_searched_num, sourcing_size)
+                        sellha_df_before_preProcessed = EdgeSourcing.preProcessor(sellha_df_before, min_searched_num, sourcing_size)
+                        merged_df = pd.concat([sellha_df_current_preProcessed, sellha_df_before_preProcessed], axis=0)
+                        merged_df.to_csv('sourced.csv', encoding='utf-8-sig', index = False)
                         EdgeSourcing.targetListMaker(pd.read_csv('sourced.csv', encoding='utf-8-sig'), isDaily=False)
                         break
             except ElementClickInterceptedException:
@@ -492,6 +510,8 @@ coupang_pw_var = tk.StringVar()
 net_profit_ratio_var = tk.StringVar()
 min_rating_var = tk.StringVar()
 prd_max_num_var = tk.StringVar()
+min_searched_num_var = tk.StringVar()
+sourcing_size_var = tk.StringVar()
 delivery_charge_var_coupang = tk.StringVar(value="False")
 delivery_charge_var_smart = tk.StringVar(value="True")
 margin_descend_var = tk.StringVar(value="False")
@@ -511,6 +531,8 @@ frame11 = tk.Frame(root)
 frame12 = tk.Frame(root)
 frame13 = tk.Frame(root)
 frame14 = tk.Frame(root)
+frame15 = tk.Frame(root)
+frame16 = tk.Frame(root)
 
 # Create Labels
 label_id = tk.Label(frame1, text="Sellha ID")
@@ -527,6 +549,8 @@ label_prd_max_num = tk.Label(frame11, text="Maximum number of products uploading
 label_delivery_charge_dropdown_coupang = tk.Label(frame12, text="Coupang Delivery charge")
 label_delivery_charge_dropdown_smart = tk.Label(frame13, text="Smart Delivery charge")
 label_margin_descend_dropdown = tk.Label(frame14, text="Sort by highest margin")
+label_min_searched_num = tk.Label(frame15, text="Minimum searched number")
+label_sourcing_size = tk.Label(frame16, text="Sourcing size")
 
 # Create Entries
 id_entry = tk.Entry(frame1, textvariable=id_var)
@@ -540,6 +564,9 @@ coupang_pw_entry = tk.Entry(frame8, textvariable=coupang_pw_var, show="*")
 net_profit_ratio_entry = tk.Entry(frame9, textvariable=net_profit_ratio_var)
 min_rating_entry = tk.Entry(frame10, textvariable=min_rating_var)
 prd_max_num_entry = tk.Entry(frame11, textvariable=prd_max_num_var)
+min_searched_num_entry = tk.Entry(frame15, textvariable=min_searched_num_var)
+sourcing_size_entry = tk.Entry(frame16, textvariable=sourcing_size_var)
+
 # Create Drop downs
 delivery_charge_dropdown_coupang = ttk.Combobox(frame12, textvariable=delivery_charge_var_coupang, values=["True", "False"])
 delivery_charge_dropdown_smart = ttk.Combobox(frame13, textvariable=delivery_charge_var_smart, values=["True", "False"])
@@ -568,6 +595,10 @@ label_min_rating.pack(side=tk.LEFT)
 min_rating_entry.pack(side=tk.RIGHT)
 label_prd_max_num.pack(side=tk.LEFT)
 prd_max_num_entry.pack(side=tk.RIGHT)
+label_min_searched_num.pack(side=tk.LEFT)
+min_searched_num_entry.pack(side=tk.RIGHT)
+label_sourcing_size.pack(side=tk.LEFT)
+sourcing_size_entry.pack(side=tk.RIGHT)
 label_delivery_charge_dropdown_coupang.pack(side=tk.LEFT)
 delivery_charge_dropdown_coupang.pack(side=tk.RIGHT)
 label_delivery_charge_dropdown_smart.pack(side=tk.LEFT)
@@ -590,6 +621,8 @@ frame11.pack()
 frame12.pack()
 frame13.pack()
 frame14.pack()
+frame15.pack()
+frame16.pack()
 
 # Create buttons for Sourcing and Uploading
 sourcing_btn = tk.Button(root, text="Monthly Sourcing", command=sourcing_action)
