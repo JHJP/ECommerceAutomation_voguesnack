@@ -1154,7 +1154,7 @@ class Tool:
                     if counter >= 2:
                         print()
                         print(" [*] There are no result.")
-                        return []
+                        return prd_name_list
             smart_searched_num_element = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[1]/h3/span')))
             checked_item_num = 0
             smart_searched_num = smart_searched_num_element.text

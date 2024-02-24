@@ -6,6 +6,8 @@ import pandas as pd
 from vogueSnack import Sourcing, Uploading, Tool
 from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.webdriver.edge.options import Options as EdgeOptions
+from selenium.webdriver.edge.service import Service
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from tkinter import messagebox
 from datetime import datetime, timedelta
 import dateutil.relativedelta
@@ -61,8 +63,7 @@ def initialize_webdriver():
     # Set Edge options to disable pop-ups and use Chromium engine
     options = EdgeOptions()
     options.use_chromium = True  # Ensure we're using the Chromium version of Edge
-    options.add_argument("--disable-popup-blocking")  # Disable pop-up blocking
-    options.add_argument("--disable-notifications")  # Disable notifications which might include the alert
+    options.add_argument('--log-level=3')  # Set log level to suppress most logs
 
     driver = webdriver.Edge(options=options)
     driver.maximize_window()
@@ -386,14 +387,16 @@ def prd_filtering_action():
                 EdgeSourcing.pageNavigator(smart_prd_list_url)
                 
                 EdgeTool.popupHandler(5, 'smart')
-                prd_name_list = EdgeTool.filtered_prd_deleter('smart', prd_name_list)
-                unique_prd_name_list = list(set(prd_name_list))
+                prd_name_list_updated = EdgeTool.filtered_prd_deleter('smart', prd_name_list)
+                unique_prd_name_list = list(set(prd_name_list_updated))
                 smart_filtering_done = True
                 df = pd.DataFrame(unique_prd_name_list, columns=['prd_code'])
                 df.to_csv('suspended_prd_smartcoupang.csv', index=False)
-                if len(prd_name_list) == 0:
+                if len(prd_name_list_updated) == 0:
                     coupang_again_filtering_done = True
                     onchan_filtering_done = True
+                if len(prd_name_list_updated) == len(prd_name_list):
+                    coupang_again_filtering_done = True
             # Coupang again(with smart suspended product list)
             if not coupang_again_filtering_done:
                 driver.switch_to.window(window_coupang)
