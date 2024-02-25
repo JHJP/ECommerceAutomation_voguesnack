@@ -758,7 +758,7 @@ class Tool:
                 search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/center/div/div/div/div/div/div[@class="{store_name}_search_box"]/a')))
                 time.sleep(0.5)
                 search_btn.click()
-                percent = int(((i)/len(prd_name_list))*100)
+                percent = int(((i+1)/len(prd_name_list))*100)
                 print(f"\r [*] {percent}% complete..", end='')
                 if percent == 100:
                     # Print a newline character at the end to move the cursor to the next line
@@ -809,6 +809,9 @@ class Tool:
     
     def prd_exsition_comparer(self, store_name):
         if store_name == 'smart':
+            duration_all = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//button[contains(text(), "전체")]')))
+            time.sleep(0.5)
+            duration_all.click()
             # Click the excel work dropdown
             dropdown = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[2]/div[1]/div[1]/div[2]/div/div/div[3]/div[1]/div')))
             time.sleep(0.5)
@@ -883,7 +886,7 @@ class Tool:
                     search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[5]/td/table/tbody/tr[1]/td[2]/a/img')))
                     time.sleep(0.5)
                     search_btn.click()
-                    percent = int(((i)/len(unique_df))*100)
+                    percent = int(((i+1)/len(unique_df))*100)
                     print(f"\r [*] {percent}% complete..", end='')
                     if percent == 100:
                         # Print a newline character at the end to move the cursor to the next line
@@ -1066,6 +1069,9 @@ class Tool:
                 return prd_name_list
         if store_name == 'smart':
             self.driver.refresh()
+            duration_all = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//button[contains(text(), "전체")]')))
+            time.sleep(0.5)
+            duration_all.click()
             time.sleep(0.5)
             if len(prd_name_list) != 0:
                 print(f"[+] {store_name}: Filtering process start.")
@@ -1085,7 +1091,7 @@ class Tool:
                 while True:
                     try:
                         print("\r [*] Wait for the table loading...", end='')
-                        WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div/ui-view/div/div/div/div/div/div/div/div/div/div[@row-index="0"]/div/div[@class="ag-cell-wrapper"]')))
+                        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div/ui-view/div/div/div/div/div/div/div/div/div/div[@row-index="0"]/div/div[@class="ag-cell-wrapper"]')))
                         print()
                         print(" [*] Table loaded successfully.")
                         break
@@ -1285,7 +1291,7 @@ class Tool:
                     search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[5]/td/table/tbody/tr[1]/td[2]/a/img')))
                     time.sleep(0.5)
                     search_btn.click()
-                    percent = int(((i)/len(prd_name_list))*100)
+                    percent = int(((i+1)/len(prd_name_list))*100)
                     print(f"\r [*] {percent}% complete..", end='')
                     if percent == 100:
                         # Print a newline character at the end to move the cursor to the next line
@@ -1356,9 +1362,12 @@ class Tool:
             print(" [*] Recharge the point and try again.")
             return
         self.driver.switch_to.window(self.driver.window_handles[2])# comp back to the onchan page.
-        confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@class='order_lightbox']/div[@class='order_complete_box modal']/div[@class='modal_btn_wrap']/a[@class='confirm_btn']")))
-        time.sleep(0.5)
-        confirm_btn.click()
+        while True:
+            try:
+                confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@class='order_lightbox']/div[@class='order_complete_box modal']/div[@class='modal_btn_wrap']/a[@class='confirm_btn']")))
+                confirm_btn.click()
+            except Exception:
+                print(" [!] error: from Order gathering last confirm button.")
         print(f"[+] Gathering order from {store_name} end.")
         
     def out_of_stock_finisher(self):
@@ -1564,6 +1573,9 @@ class Tool:
         
         if store_name == 'smart':
             self.driver.refresh()
+            duration_all = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//button[contains(text(), "전체")]')))
+            time.sleep(0.5)
+            duration_all.click()
             if out_of_stock_prd_string != "Empty":
                 smart_seller_prd_code_check = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[1]/div/div[2]/label/span')))
                 time.sleep(0.5)
