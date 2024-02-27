@@ -351,31 +351,20 @@ class Sourcing:
                 if percent == 100:
                     # Print a newline character at the end to move the cursor to the next line
                     print()
-            # print("[+] Daily sourcing start.: sellha")
-            # windows = self.driver.window_handles
-            # self.driver.switch_to.window(windows[3])
-            # domain_dropdown = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="root"]/section/main/div[2]/div[1]/div[3]/div[2]/div[1]/div[1]/div')))
-            # for i in range(1,11):
-            #     domain_dropdown.click()
-            #     time.sleep(1)
-            #     domain = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[5]/div/div/div/div[2]/div[1]/div/div/div[{i}]')))
-            #     domain.click()
-            #     # Get yesterday keyword data 1st ~ 10th
-            #     for j in range(10):
-            #         while True:
-            #             time.sleep(1)
-            #             try:
-            #                 keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="root"]/section/main/div[2]/div[1]/div[3]/div[3]/div[2]/div[2]/div/div[{j+1}]/div[1]/div[1]/div[2]'))).text
-            #                 naver_keyword_list.append(keyword)
-            #                 break
-            #             except StaleElementReferenceException:
-            #                 print(f"Stale element Exception at domain {i}, index {j}")
-            #     percent = int(((i-2)/7)*100)
-            #     print(f"\r [*] {percent}% complete..", end='')
-            #     if percent == 100:
-            #         # Print a newline character at the end to move the cursor to the next line
-            #         print()
+            print("[+] Daily sourcing start.: sellha")
+            windows = self.driver.window_handles
+            self.driver.switch_to.window(windows[3])
+            for i in range(1,15):
+                best_keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="root"]/section/main/div[2]/div[1]/div[3]/div[3]/div[1]/div[2]/div/div[{i}]/div[2]')))
+                best_keyword_text = best_keyword.text
+                naver_keyword_list.append(best_keyword_text)
+                percent = int((i/14)*100)
+                print(f"\r [*] {percent}% complete..", end='')
+                if percent == 100:
+                    # Print a newline character at the end to move the cursor to the next line
+                    print()
             naver_sourced_df = pd.DataFrame(naver_keyword_list, columns=['키워드'])
+            naver_sourced_df = naver_sourced_df.drop_duplicates(subset=['키워드'])
             naver_sourced_df.to_csv('naverSourced.csv', encoding='utf-8-sig', index = False)
         elif matching_files:
             naver_sourced_df = pd.read_csv('naverSourced.csv')
@@ -1127,6 +1116,10 @@ class Tool:
             # smart_input_box.clear()
             self.driver.refresh()
             time.sleep(0.5)
+            duration_all = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//button[contains(text(), "전체")]')))
+            time.sleep(0.5)
+            duration_all.click()
+            time.sleep(0.5)
             on_saling_checker = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[2]/div/div/div/label[3]')))
             time.sleep(0.5)
             on_saling_checker.click()
@@ -1366,6 +1359,7 @@ class Tool:
             try:
                 confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@class='order_lightbox']/div[@class='order_complete_box modal']/div[@class='modal_btn_wrap']/a[@class='confirm_btn']")))
                 confirm_btn.click()
+                break
             except Exception:
                 print(" [!] error: from Order gathering last confirm button.")
         print(f"[+] Gathering order from {store_name} end.")
@@ -1444,7 +1438,7 @@ class Tool:
         elif not user_response:
             return "Cancelled"
 
-    def out_of_stock_product_deleter(self, store_name, out_of_stock_prd_string, new_out_of_stock_temp_df):
+    def out_of_stock_product_deleter(self, store_name, out_of_stock_prd_string, out_of_stock_prd_temp_string):
         # coupang: Assume that we successfully navigate to the product list in the coupang wing
         if store_name == 'coupang':
             self.driver.refresh()
@@ -1496,12 +1490,12 @@ class Tool:
                 else:
                     message_coupang_out_of_stock = "Coupang(out of stock): Item not found."
                 print(message_coupang_out_of_stock)
-            if new_out_of_stock_temp_df != "Empty":
+            if out_of_stock_prd_temp_string != "Empty":
                 coupang_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[1]/dd[1]/span/span[2]/textarea')))
                 time.sleep(0.5)
                 coupang_input_box.clear()
                 time.sleep(0.5)
-                coupang_input_box.send_keys(new_out_of_stock_temp_df)
+                coupang_input_box.send_keys(out_of_stock_prd_temp_string)
 
                 while True:
                     coupang_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl/dd/button[contains(text(), "검색") and not(contains(text(), "상세"))]')))
@@ -1524,8 +1518,8 @@ class Tool:
                     time.sleep(5)
                     coupang_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//span[@class="accent"]')))
                     coupang_searched_num_int = int(coupang_searched_num.text.replace(',',''))
-                    out_of_stock_prd_string_num_int = len(out_of_stock_prd_string.split(','))
-                    if coupang_searched_num_int <= out_of_stock_prd_string_num_int:
+                    out_of_stock_prd_temp_string_num_int = len(out_of_stock_prd_temp_string.split(','))
+                    if coupang_searched_num_int <= out_of_stock_prd_temp_string_num_int:
                         break
 
 
@@ -1618,7 +1612,7 @@ class Tool:
                 else:
                     message_smart_out_of_stock = "Smart(out of stock): Item not found."
                 print(message_smart_out_of_stock)
-            if new_out_of_stock_temp_df != "Empty":
+            if out_of_stock_prd_temp_string != "Empty":
                 smart_seller_prd_code_check = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[1]/div/div[2]/label')))
                 time.sleep(0.5)
                 smart_seller_prd_code_check.click()
@@ -1626,7 +1620,7 @@ class Tool:
                 time.sleep(0.5)
                 smart_input_box.clear()
                 time.sleep(0.5)
-                smart_input_box.send_keys(new_out_of_stock_temp_df)
+                smart_input_box.send_keys(out_of_stock_prd_temp_string)
                 smart_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[2]/div/button[1]')))
                 time.sleep(0.5)
                 smart_search_btn.click()
