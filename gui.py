@@ -693,7 +693,13 @@ def schedule_actions():
     schedule.every().day.at("10:00").do(lambda: enqueue_task(lambda: daily_btn.invoke()))
 
     # Schedule Product Status Checking Button every 30 minutes to enqueue task
-    schedule.every(30).minutes.do(lambda: enqueue_task(lambda: prd_stat_checking_btn.invoke()))
+    def enqueue_prd_stat_checking_if_within_time():
+        current_time = datetime.datetime.now().time()
+        start_time = datetime.time(9, 0)  # 9:00 AM
+        end_time = datetime.time(20, 0)  # 8:00 PM
+        if start_time <= current_time <= end_time:
+            enqueue_task(lambda: prd_stat_checking_btn.invoke())
+    schedule.every(30).minutes.do(lambda: enqueue_task(lambda: enqueue_prd_stat_checking_if_within_time.invoke()))
 
     # # Schedule Product Filtering Button every 6 hours to enqueue task
     # schedule.every(1).minutes.do(lambda: enqueue_task(lambda: prd_filtering_btn.invoke()))
