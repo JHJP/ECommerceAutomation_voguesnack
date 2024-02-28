@@ -689,17 +689,17 @@ def schedule_actions():
     # # Schedule Monthly Button to enqueue task
     # schedule.every().month.at("17:00").do(lambda: enqueue_task(lambda: monthly_btn.invoke()))
 
-    # # Schedule Daily Button to enqueue task
-    # schedule.every().day.at("10:00").do(lambda: enqueue_task(lambda: daily_btn.invoke()))
+    # Schedule Daily Button to enqueue task
+    schedule.every().day.at("10:00").do(lambda: enqueue_task(lambda: daily_btn.invoke()))
 
     # Schedule Product Status Checking Button every 30 minutes to enqueue task
-    schedule.every(1).minutes.do(lambda: enqueue_task(lambda: prd_stat_checking_btn.invoke()))
+    schedule.every(30).minutes.do(lambda: enqueue_task(lambda: prd_stat_checking_btn.invoke()))
 
-    # Schedule Product Filtering Button every 6 hours to enqueue task
-    schedule.every(1).minutes.do(lambda: enqueue_task(lambda: prd_filtering_btn.invoke()))
+    # # Schedule Product Filtering Button every 6 hours to enqueue task
+    # schedule.every(1).minutes.do(lambda: enqueue_task(lambda: prd_filtering_btn.invoke()))
 
-    # # Schedule Gathering Order Button every 3 hours to enqueue task
-    # schedule.every(3).hours.do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
+    # Schedule Gathering Order Button every 3 hours to enqueue task
+    schedule.every(3).hours.do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
 
 if __name__ == "__main__":
     set_default_text()

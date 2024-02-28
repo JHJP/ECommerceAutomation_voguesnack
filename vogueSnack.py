@@ -1347,7 +1347,12 @@ class Tool:
                 break
             except Exception:
                 time.sleep(0.5)
-        order_send_point_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@id='order_send_btn']")))
+        while True:
+            try:
+                order_send_point_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[@id='order_send_btn']")))
+                break
+            except Exception:
+                time.sleep(0.5)
         time.sleep(0.5)
         order_send_point_btn.click()
         alert_text = self.popupHandler(3, 'onchan')
