@@ -11,6 +11,9 @@ from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from tkinter import messagebox
 from datetime import datetime, timedelta
 import dateutil.relativedelta
+import threading
+import schedule
+import queue
 # After adding edge webdriver path to environment variable, you can execute below code.(ex. )
 
 url = "https://sellha.kr/member/login"
@@ -280,6 +283,8 @@ def prd_stat_checking_action():
                 out_of_stock_prd_temp_list = out_of_stock_prd_temp_string.split(',')
                 out_of_stock_prd_list.extend(out_of_stock_prd_temp_list)
                 unique_prd_name_list = [i for i in out_of_stock_prd_list if i != 'Empty']
+                message = f" [!] Stat Checking: {unique_prd_name_list}\n"
+                EdgeTool.append_to_text_widget(message, "red")
                 checking_phase_done = True
             if out_of_stock_prd_string == 'Empty' and out_of_stock_prd_temp_string == 'Empty':
                  coupang_phase_done = True
@@ -656,8 +661,62 @@ result_text.pack()
 # Configure the tag for red text
 result_text.tag_configure("red", foreground="red")
 
+# Button activate scheduling: activate one after the other when the schediule is overlapped.
+task_queue = queue.Queue()  # Global queue for tasks
+
+def run_scheduled_jobs():
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+def task_worker():
+    """Worker thread that processes tasks in the queue."""
+    while True:
+        task = task_queue.get()  # Wait for a task from the queue
+        try:
+            task()  # Execute the task
+        except Exception as e:
+            message = f" [!] Task worker: {e}\n"
+            EdgeTool.append_to_text_widget(message, "red")
+        finally:
+            task_queue.task_done()  # Mark the task as done, regardless of success or failure
+
+def enqueue_task(task):
+    """Function to add a task to the queue."""
+    task_queue.put(task)
+
+def schedule_actions():
+    # # Schedule Monthly Button to enqueue task
+    # schedule.every().month.at("17:00").do(lambda: enqueue_task(lambda: monthly_btn.invoke()))
+
+    # # Schedule Daily Button to enqueue task
+    # schedule.every().day.at("10:00").do(lambda: enqueue_task(lambda: daily_btn.invoke()))
+
+    # Schedule Product Status Checking Button every 30 minutes to enqueue task
+    schedule.every(1).minutes.do(lambda: enqueue_task(lambda: prd_stat_checking_btn.invoke()))
+
+    # Schedule Product Filtering Button every 6 hours to enqueue task
+    schedule.every(1).minutes.do(lambda: enqueue_task(lambda: prd_filtering_btn.invoke()))
+
+    # # Schedule Gathering Order Button every 3 hours to enqueue task
+    # schedule.every(3).hours.do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
+
+if __name__ == "__main__":
+    set_default_text()
+    initialize_webdriver()
+    schedule_actions()
+    
+    # Start the scheduler thread
+    scheduler_thread = threading.Thread(target=run_scheduled_jobs, daemon=True)
+    scheduler_thread.start()
+    
+    # Start the task worker thread
+    worker_thread = threading.Thread(target=task_worker, daemon=True)
+    worker_thread.start()
+
+    root.mainloop()
+
 # Start the main event loop
-set_default_text()
-initialize_webdriver()
-# open_tabs()
-root.mainloop()
+# set_default_text()
+# initialize_webdriver()
+# root.mainloop()

@@ -476,8 +476,8 @@ class Uploading:
                         prices = [input_element.get_attribute('value') for input_element in retail_price_inputs]
                         # Check if all option's prices are same
                         if len(set(prices)) > 1:# Not same
-                            message = f" [!] {prd_code} has more than one option and the prices are different.\n"
-                            self.tool.append_to_text_widget(message, "red")
+                            # message = f" [!] {prd_code} has more than one option and the prices are different.\n"
+                            # self.tool.append_to_text_widget(message, "red")
                             for j in range(len(retail_price_inputs)):
                                 wholesale_price = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[3]/ul/li[{i+1}]/ul/li[3]/div/ul/li[{j+1}]/ul/li[3]")))
                                 wholesale_price = int(wholesale_price.text.replace('원',''))
@@ -552,8 +552,8 @@ class Uploading:
                         prices = [input_element.get_attribute('value') for input_element in retail_price_inputs]
                         # Check if all the option's prices are same
                         if len(set(prices)) > 1: # Not same
-                            message = f" [!] {prd_code} has more than one option and the prices are different.\n"
-                            self.tool.append_to_text_widget(message, "red")
+                            # message = f" [!] {prd_code} has more than one option and the prices are different.\n"
+                            # self.tool.append_to_text_widget(message, "red")
                             for j in range(len(retail_price_inputs)):
                                 wholesale_price = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located((By.XPATH, f"/html/body/div[3]/section/div/div[2]/ul/li[{i+1}]/ul/li[3]/div/ul/li[{j+1}]/ul/li[3]")))
                                 wholesale_price = int(wholesale_price.text.replace('원',''))
@@ -903,6 +903,8 @@ class Tool:
             print(message_smart_out_of_stock)
 
     def filtered_prd_deleter(self, store_name, prd_name_list):
+        message = f" [!] Filtering: {store_name}/{prd_name_list}\n"
+        self.append_to_text_widget(message, "red")
         if store_name == 'coupang':
             self.driver.refresh()
             time.sleep(0.5)
