@@ -22,13 +22,15 @@ url3 = "https://www.onch3.co.kr/login/login_web.php"
 url4 = "https://www.onch3.co.kr/dbcenter_renewal/index.php"
 smart_url = "https://accounts.commerce.naver.com/login?url=https%3A%2F%2Fsell.smartstore.naver.com%2F%23%2Flogin-callback"
 coupang_url = 'https://xauth.coupang.com/auth/realms/seller/protocol/openid-connect/auth?response_type=code&client_id=wing&redirect_uri=https%3A%2F%2Fwing.coupang.com%2Fsso%2Flogin?returnUrl%3D%252F&state=456c3cf5-a6dd-4f52-abe4-cd3364bad4e4&login=true&scope=openid'
+coupang_return_management_url = 'https://wing.coupang.com/tenants/sfl-portal/return-delivery/list'
 naver_datalab_url = "https://datalab.naver.com/"
 onchan_prd_stat_url = "https://www.onch3.co.kr/admin_mem_clo_list_2.php?ost=&sec=&ol=&npage="
 onchan_order_stat_coupang_url = "https://www.onch3.co.kr/admin_api_order.html?api_name=coupang"
 onchan_order_stat_smart_url = "https://www.onch3.co.kr/admin_api_order.html?api_name=smartstore"
 onchan_prd_list_url = "https://www.onch3.co.kr/admin_mem_prd_list.html"
 onchan_smart_prd_managenemt_url = "https://www.onch3.co.kr/admin_smart_manage.html#"
-onchan_coupang_prd_managenemt_url = "https://www.onch3.co.kr/admin_coupang_manage.html" 
+onchan_coupang_prd_managenemt_url = "https://www.onch3.co.kr/admin_coupang_manage.html"
+onchan_my_prd_list_url = "https://www.onch3.co.kr/admin_mem_prd.html"
 coupang_prd_list_url = "https://wing.coupang.com/vendor-inventory/list?searchIds=&startTime=2000-01-01&endTime=2099-12-31&productName=&brandName=&manufacturerName=&productType=&autoPricingStatus=ALL&dateType=productRegistrationDate&dateRangeShowStyle=true&dateRange=all&saleEndDatePeriodType=&includeUsedProduct=&deleteType=false&deliveryMethod=&shippingType=&shipping=&otherType=&productStatus=SAVED,WAIT_FOR_SALE,VALID,SOLD_OUT,INVALID,END_FOR_SALE,APPROVING,IN_REVIEW,DENIED,PARTIAL_APPROVED,APPROVED,ALL&advanceConditionShow=false&displayCategoryCodes=&currentMenuCode=&rocketMerchantVersion=&registrationType=&upBundling=ALL&hasUpBundlingItem=&hasBadImage=false&page=1&countPerPage=50&sortField=vendorInventoryId&desc=true&fromListV2=true&locale=ko_KR&vendorItemViolationType=&coupangAttributeOptimized=FALSE&autoPricingActive="
 smart_prd_list_url = "https://sell.smartstore.naver.com/#/products/origin-list"
 
@@ -215,6 +217,9 @@ def daily_sourcing_uploading_action():
                     message = "[*] Element intercepted fixed while daily.\n"
                     EdgeTool.append_to_text_widget(message, "blue")
     print("[+] Daily sourcing & uploading successfully end.")
+    EdgeTool.dummy_deleter(base_path, 'preprocesednaverSourcedUpdated')
+    EdgeTool.dummy_deleter(base_path, 'naverSourced')
+    EdgeTool.dummy_deleter(base_path, 'preprocessedNaverSourced')
 
 def discount_rate_pricing_action():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
@@ -501,6 +506,36 @@ def prd_exsition_comparing_action():
                 print("[!] Element intercepted. Scroll down the page.")
                 EdgeTool.scroll_downer(250)
 
+def return_manager_action():
+    coupang_id = coupang_id_var.get()
+    coupang_pw = coupang_pw_var.get()
+    onchan_id = id2_var.get()
+    onchan_pw = password2_var.get()
+
+    # login checking
+    isLoggedin_onchan, isLoggedin_coupang = EdgeTool.login_checker(window_onchan, url3, window_coupang, coupang_url)
+    if not isLoggedin_onchan:
+        driver.switch_to.window(window_onchan)
+        EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
+    if not isLoggedin_coupang:
+        driver.switch_to.window(window_coupang)
+        EdgeSourcing.login('coupang',coupang_url, coupang_id, coupang_pw, 'username', 'password', coupang_loginbtn, authPhase=False)
+
+    while True:
+        try:
+            driver.switch_to.window(window_coupang)
+            EdgeSourcing.pageNavigator(coupang_return_management_url)
+            cust_name_list,delivery_code_list = EdgeTool.return_manager('coupang')
+            EdgeSourcing.pageNavigator(onchan_my_prd_list_url)
+            EdgeTool.return_manager_onchan(cust_name_list, delivery_code_list)
+            print("[+] Return managing end.")
+            break
+        except ElementClickInterceptedException:
+                message = "[!] Element intercepted. \n"
+                EdgeTool.append_to_text_widget(message, "red")
+                print("[!] Element intercepted. Scroll down the page.")
+                EdgeTool.scroll_downer(250)
+
 # Initialize the main window
 root = tk.Tk()
 root.title("Automation Tool")
@@ -642,8 +677,9 @@ pricing_btn = tk.Button(root, text="Pricing", command=discount_rate_pricing_acti
 prd_stat_checking_btn = tk.Button(root, text="Product stat checking", command=prd_stat_checking_action)
 prd_filtering_btn = tk.Button(root, text="Product filtering", command=prd_filtering_action)
 gathering_order_btn = tk.Button(root, text="Order gathering", command=gathering_order_action)
-prd_exsition_comparing_btn = tk.Button(root, text="Product existion checking", command=prd_exsition_comparing_action
-)
+prd_exsition_comparing_btn = tk.Button(root, text="Product existion checking", command=prd_exsition_comparing_action)
+return_manager_btn = tk.Button(root, text="Return management", command=return_manager_action)
+
 webdriver_btn.pack()
 # sourcing_btn.pack()
 # uploading_btn.pack()
@@ -653,6 +689,7 @@ daily_btn.pack()
 prd_stat_checking_btn.pack()
 prd_filtering_btn.pack()
 gathering_order_btn.pack()
+return_manager_btn.pack()
 
 # Creating and placing the result Text widget
 result_text = tk.Text(root, height=25, width=60)
@@ -686,23 +723,32 @@ def enqueue_task(task):
     task_queue.put(task)
 
 def schedule_actions():
-    # # Schedule Monthly Button to enqueue task
-    # schedule.every().month.at("17:00").do(lambda: enqueue_task(lambda: monthly_btn.invoke()))
+    # Schedule Monthly Button to enqueue task
+    def check_and_enqueue_monthly_task():
+        current_date = datetime.now()
+        # Check if today is the first day of the month
+        if current_date.day == 1:
+            enqueue_task(lambda: monthly_btn.invoke())
+    schedule.every().day.at("17:00").do(check_and_enqueue_monthly_task)
 
     # Schedule Daily Button to enqueue task
     schedule.every().day.at("10:00").do(lambda: enqueue_task(lambda: daily_btn.invoke()))
 
     # Schedule Product Status Checking Button every 30 minutes to enqueue task
     def enqueue_prd_stat_checking_if_within_time():
-        current_time = datetime.datetime.now().time()
-        start_time = datetime.time(9, 0)  # 9:00 AM
-        end_time = datetime.time(20, 0)  # 8:00 PM
-        if start_time <= current_time <= end_time:
+        current_time = datetime.now()
+        current_hour = current_time.hour
+        if 9 <= current_hour <= 20:# 9am~8pm
             enqueue_task(lambda: prd_stat_checking_btn.invoke())
-    schedule.every(30).minutes.do(lambda: enqueue_task(lambda: enqueue_prd_stat_checking_if_within_time.invoke()))
+    schedule.every(30).minutes.do(enqueue_prd_stat_checking_if_within_time)
 
-    # # Schedule Product Filtering Button every 6 hours to enqueue task
-    # schedule.every(1).minutes.do(lambda: enqueue_task(lambda: prd_filtering_btn.invoke()))
+    def enqueue_prd_filtering_if_within_time():
+        current_time = datetime.now()
+        current_hour = current_time.hour
+        if 11 <= current_hour <= 20: #11am~8pm
+            enqueue_task(lambda: prd_filtering_btn.invoke())
+    # Schedule Product Filtering Button every 6 hours to enqueue task
+    schedule.every(3).hours.do(enqueue_prd_filtering_if_within_time)
 
     # Schedule Gathering Order Button every 3 hours to enqueue task
     schedule.every(3).hours.do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))

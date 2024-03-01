@@ -709,6 +709,138 @@ class Tool:
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
 
+    def return_manager_onchan_handler(self):
+        time.sleep(0.5)
+        self.driver.switch_to.window(self.driver.window_handles[5])
+        time.sleep(0.5)
+        dropdown_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, "/html/body/center/table/tbody/tr[4]/td[2]/select")))
+        time.sleep(0.5)
+        dropdown_element.click()
+        reason_select_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, "/html/body/center/table/tbody/tr[4]/td[2]/select/option[3]")))
+        time.sleep(0.5)
+        reason_select_element.click()
+        inquiary_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, "/html/body/center/table/tbody/tr[4]/td[2]/select/option[3]")))
+        time.sleep(0.5)
+        inquiary_element.click()
+        time.sleep(2)
+        self.driver.close()
+        self.driver.switch_to.window(self.driver.window_handles[2])# comp back to the onchan page.
+
+    def return_manager_onchan(self, cust_name_list, delivery_code_list):
+        print(f"[+] onchan: Return management start.")
+        for i in range(len(cust_name_list)):
+            input_box_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="order_search_txt"]')))
+            input_box_element.send_keys(cust_name_list[i])
+            search_btn_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table/tbody/tr[3]/td[3]/div[1]/div[3]/ul[1]/li[2]/div[2]/a')))
+            search_btn_element.click()
+            while True:
+                try:
+                    WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table/tbody/tr[3]/td[3]/div[1]/div[3]/ul[4]/li[2]/ul/li[2]/div/div/div/div[1]')))
+                    break
+                except Exception:
+                    time.sleep(1)
+            delivery_code_elements = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, '//li[@class="prd_list_state"]/div/font[2]')))
+            for j in len(delivery_code_elements):
+                delivery_code_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//li[{j+1}]/ul/li[@class="prd_list_state"]/div/font[2]')))
+                if delivery_code_element.text == delivery_code_list[i]:
+                    return_button_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'/html/body/center/table/tbody/tr[3]/td[3]/div[1]/div[3]/ul[4]/li[{j+1}]/ul/li[6]/a[2]')))
+                    time.sleep(0.5)
+                    return_button_element.click()
+                    while True:
+                        try:
+                            self.return_manager_onchan_handler()
+                            break
+                        except Exception:
+                            time.sleep(0.5)
+                            print("[+] Return: exception occur")
+
+    def return_manager(self, store_name):
+        print(f"[+] {store_name}: Return management start.")
+        self.driver.refresh()
+        cust_name_list = []
+        delivery_code_list = []
+        if store_name == 'coupang':
+            counter = 0
+            while True:
+                try:
+                    print("\r [*] Wait for the table loading...", end='')
+                    WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="wing-top-body"]/div/div[5]/div[3]/table/tbody/tr/td[1]/span/input')))
+                    print()
+                    print(" [*] Return reception: Table loaded successfully.")
+                    break
+                except TimeoutException:
+                    counter += 1
+                    if counter == 3:
+                        print()
+                        print(" [*] Return reception: There is no result.")
+                        return
+            searched_num_element = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="wing-top-body"]/div/div[5]/div[1]/span')))
+            time.sleep(0.5)
+            searched_num = searched_num_element.text
+            fault_reasons = ["단순 변심", "잘못 주문", "배송일정 불만", "상품 불만", "가격 불만"]
+            if searched_num == '1':
+                reason_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[3]/table/tbody/tr/td[8]/div/a')))
+                time.sleep(0.5)
+                reason = reason_element.text
+                customer_fault = any(fault_reason in reason for fault_reason in fault_reasons)
+                name_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[3]/table/tbody/tr/td[6]/div/div')))
+                time.sleep(0.5)
+                name = name_element.text
+                ph_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[3]/table/tbody/tr/td[6]/div/span')))
+                time.sleep(0.5)
+                phone_number = ph_element.text
+                prd_name_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[3]/table/tbody/tr/td[7]/div/div/span')))
+                time.sleep(0.5)
+                prd_name = prd_name_element.text
+                message = f" [!] Return: {store_name}/구매자귀책:{customer_fault},{name},{phone_number},{prd_name},{reason}\n"
+                self.append_to_text_widget(message, "red")
+                # Get product code
+                prd_num_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[3]/table/tbody/tr/td[5]/a')))
+                time.sleep(0.5)
+                prd_num_element.click()
+                delivery_code_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[5]/div/div[2]/div[2]/div/div[2]/div[2]/table/tbody/tr/td[6]/div/div[1]/button')))
+                time.sleep(0.5)
+                delivery_code = delivery_code_element.text
+                delivery_code_clean = delivery_code.strip()
+                cust_name_list.append(name)
+                delivery_code_list.append(delivery_code_clean)
+                close_btn = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[5]/div/div[3]/div/button')))
+                time.sleep(0.5)
+                close_btn.click()
+                return cust_name_list,delivery_code_list
+
+            else:
+                for i in range(int(searched_num)):
+                    reason_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[3]/table/tbody/tr[{i+1}]/td[8]/div/a')))
+                    time.sleep(0.5)
+                    reason = reason_element.text
+                    customer_fault = any(fault_reason in reason for fault_reason in fault_reasons)
+                    name_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[3]/table/tbody/tr[{i+1}]/td[6]/div/div')))
+                    time.sleep(0.5)
+                    name = name_element.text
+                    ph_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located-((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[3]/table/tbody/tr[{i+1}]/td[6]/div/span')))
+                    time.sleep(0.5)
+                    phone_number = ph_element.text
+                    prd_name_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[3]/table/tbody/tr[{i+1}]/td[7]/div/div/span')))
+                    time.sleep(0.5)
+                    prd_name = prd_name_element.text
+                    message = f" [!] Return: {store_name}/구매자귀책:{customer_fault},{name},{phone_number},{prd_name},{reason}\n"
+                    self.append_to_text_widget(message, "red")
+                    # Get product code
+                    prd_num_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[3]/table/tbody/tr[{i+1}]/td[5]/a')))
+                    time.sleep(0.5)
+                    prd_num_element.click()
+                    delivery_code_element = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[5]/div/div[2]/div[2]/div/div[2]/div[2]/table/tbody/tr/td[6]/div/div[1]/button')))
+                    time.sleep(0.5)
+                    delivery_code = delivery_code_element.text
+                    delivery_code_clean = delivery_code.strip()
+                    cust_name_list.append(name)
+                    delivery_code_list.append(delivery_code_clean)
+                    close_btn = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="wing-top-body"]/div/div[5]/div[5]/div/div[3]/div/button')))
+                    time.sleep(0.5)
+                    close_btn.click()
+                return cust_name_list,delivery_code_list
+
     def login_checker(self, window_onchan, onchan_login_url, window_coupang, coupang_login_url):
         # onchan login checker
         self.driver.switch_to.window(window_onchan)
@@ -1343,16 +1475,14 @@ class Tool:
         self.popupHandler(3, 'onchan')
         while True:
             try:
-                self.driver.switch_to.window(self.driver.window_handles[5])
-                break
-            except Exception:
                 time.sleep(0.5)
-        while True:
-            try:
+                self.driver.switch_to.window(self.driver.window_handles[5])
+                time.sleep(0.5)
                 order_send_point_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[@id='order_send_btn']")))
                 break
             except Exception:
                 time.sleep(0.5)
+                print("[+] Ordergathering exception")
         time.sleep(0.5)
         order_send_point_btn.click()
         alert_text = self.popupHandler(3, 'onchan')
