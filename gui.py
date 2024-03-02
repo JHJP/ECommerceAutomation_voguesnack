@@ -526,6 +526,7 @@ def return_manager_action():
             driver.switch_to.window(window_coupang)
             EdgeSourcing.pageNavigator(coupang_return_management_url)
             cust_name_list,delivery_code_list = EdgeTool.return_manager('coupang')
+            driver.switch_to.window(window_onchan)
             EdgeSourcing.pageNavigator(onchan_my_prd_list_url)
             EdgeTool.return_manager_onchan(cust_name_list, delivery_code_list)
             print("[+] Return managing end.")

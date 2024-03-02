@@ -70,21 +70,25 @@ class Sourcing:
         return isLoggedin
             
     def pageNavigator(self, url):
-        self.driver.get(url)
-        # wait the ready state to be complete
-        WebDriverWait(driver=self.driver, timeout=10).until(
-            lambda x: x.execute_script("return document.readyState === 'complete'")
-        )
-
-        error_message = "Incorrect url or other error."
-        # get the errors (if there are)
-        errors = self.driver.find_elements(By.CLASS_NAME,"flash-error")
-        # if we find that error message within errors, then login is failed
-        if any(error_message in e.text for e in errors):
-            message = "[!] Navigation failed.\n"
-            self.tool.append_to_text_widget(message, "red")
-        else:
-            print(" [*] Navigation successful")
+        while True:
+            try:
+                self.driver.get(url)
+                # wait the ready state to be complete
+                WebDriverWait(driver=self.driver, timeout=10).until(
+                    lambda x: x.execute_script("return document.readyState === 'complete'")
+                )
+                error_message = "Incorrect url or other error."
+                # get the errors (if there are)
+                errors = self.driver.find_elements(By.CLASS_NAME,"flash-error")
+                # if we find that error message within errors, then login is failed
+                if any(error_message in e.text for e in errors):
+                    message = "[!] Navigation failed.\n"
+                    self.tool.append_to_text_widget(message, "red")
+                else:
+                    print(" [*] Navigation successful")
+                    break
+            except Exception:
+                time.sleep(2)
 
     def categoryButtonClicker(self,target_num):
         WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located((By.XPATH, '//button[text()="1분류"]')))
@@ -157,22 +161,24 @@ class Sourcing:
     def downloadChecker(self, download_path, file_prefix, first_phase):
         counter = 0
         while True:
-            time.sleep(3)
+            time.sleep(1)
             files = os.listdir(download_path)
             matching_files = [file for file in files if file.startswith(file_prefix)]
             if not matching_files and counter < 3:
-                print(f" [*] {file_prefix} no exist. I'll check again.")
+                print(f"\r [*] Confirming {file_prefix} file download..", end='')
                 counter += 1
                 continue
             elif not matching_files and counter >= 3:
                 if first_phase:
+                    print()
                     return False
-                input(f" [*] {file_prefix} no exist.Press enter to recheck.")
                 counter = 0
                 continue
             else:
-                print(f"[+] {file_prefix} downloaded successfully. Start reading.")
+                print()
+                print(f"[+] {file_prefix} downloaded successfully. Reading the file..")
                 if first_phase:
+                    print()
                     return True
                 # Construct the full path to the first matching file
                 file_to_check = os.path.join(download_path, matching_files[0])
