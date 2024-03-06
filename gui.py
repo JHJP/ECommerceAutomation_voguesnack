@@ -181,6 +181,7 @@ def monthly_sourcing_uploading_action():
         EdgeSourcing.login('coupang',coupang_url, coupang_id, coupang_pw, 'username', 'password', coupang_loginbtn, authPhase=False)
     driver.switch_to.window(window_coupang)
     EdgeTool.delivery_charge_changer('coupang', coupang_prd_list_url, isDeliveryCharge=delivery_charge_var_coupang.get() == "True")
+    naver_duplicate_handling_action('today')
     print("[+] Monthly phase end.")
 
 def daily_sourcing_uploading_action():
@@ -209,6 +210,7 @@ def daily_sourcing_uploading_action():
                 EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, min_rating, prd_max_num, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=margin_descend_var.get() == "True")
                 driver.switch_to.window(window_coupang)
                 EdgeTool.delivery_charge_changer('coupang', coupang_prd_list_url, isDeliveryCharge=delivery_charge_var_coupang.get() == "True")
+                naver_duplicate_handling_action('today')
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted while daily.\n"
@@ -223,15 +225,9 @@ def daily_sourcing_uploading_action():
 
 def discount_rate_pricing_action():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
-    isLoggedin = False
-    smart_id = smart_id_var.get()
-    smart_pw = smart_pw_var.get()
     while True:
             try:
                 # Start the pricing
-                if not isLoggedin:
-                    isLoggedin = EdgeSourcing.login('smart',url,smart_id,smart_pw,'id','pw',smart_login_btn, authPhase=True)
-                    # isLoggedin = EdgeSourcing.login('coupang',url, coupang_id, coupang_pw, usernameBox, passwordBox, loginbtn, authPhase=True)
                 EdgeTool.discountRateSetting('smart')
                 # EdgeTool.delivery_charge_changer('coupang',isDeliveryCharge=False)
                 break
@@ -537,6 +533,68 @@ def return_manager_action():
                 print("[!] Element intercepted. Scroll down the page.")
                 EdgeTool.scroll_downer(250)
 
+def naver_duplicate_handling_action(duration):
+    smart_duplicate_finish = False
+    onchan_duplicate_finish = False
+    coupang_duplicate_finish = False
+    while True:
+        try:
+            if not smart_duplicate_finish:
+                driver.switch_to.window(window_smart)
+                EdgeSourcing.pageNavigator(smart_prd_list_url)
+                unique_duplicated_prd_list = EdgeTool.naverDuplicateHandler(duration)
+                EdgeTool.filtered_prd_deleter('smart', unique_duplicated_prd_list)
+                smart_duplicate_finish = True
+            if not coupang_duplicate_finish:
+                driver.switch_to.window(window_coupang)
+                EdgeSourcing.pageNavigator(coupang_prd_list_url)
+                EdgeTool.filtered_prd_deleter('coupang', unique_duplicated_prd_list)
+            if not onchan_duplicate_finish:
+                driver.switch_to.window(window_onchan)
+                EdgeSourcing.pageNavigator(onchan_prd_list_url)
+                EdgeTool.filtered_prd_deleter('onchan', unique_duplicated_prd_list)
+                # Move to the product management page and delete the product.
+                time.sleep(0.5)
+                EdgeSourcing.pageNavigator(onchan_smart_prd_managenemt_url)
+                EdgeTool.onchan_prd_management_deleter('smart', unique_duplicated_prd_list)
+                time.sleep(0.5)
+                EdgeSourcing.pageNavigator(onchan_coupang_prd_managenemt_url)
+                EdgeTool.onchan_prd_management_deleter('coupang', unique_duplicated_prd_list)
+                print("[+] Naver duplicate handling end.")
+                onchan_duplicate_finish = True
+                break
+            if smart_duplicate_finish and coupang_duplicate_finish and onchan_duplicate_finish:
+                EdgeTool.dummy_deleter(download_path, '스마트스토어상품')
+        except ElementClickInterceptedException:
+                message = "[!] Element intercepted. \n"
+                EdgeTool.append_to_text_widget(message, "red")
+                print("[!] Element intercepted. Scroll down the page.")
+                EdgeTool.scroll_downer(250)
+
+def delivery_charge_changer_action():
+    # login checking
+    isLoggedin_onchan, isLoggedin_coupang = EdgeTool.login_checker(window_onchan, url3, window_coupang, coupang_url)
+    if not isLoggedin_onchan:
+        onchan_id = id2_var.get()
+        onchan_pw = password2_var.get()
+        driver.switch_to.window(window_onchan)
+        EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
+    if not isLoggedin_coupang:
+        coupang_id = coupang_id_var.get()
+        coupang_pw = coupang_pw_var.get()
+        driver.switch_to.window(window_coupang)
+        EdgeSourcing.login('coupang',coupang_url, coupang_id, coupang_pw, 'username', 'password', coupang_loginbtn, authPhase=False)
+    while True:
+            try:
+                driver.switch_to.window(window_coupang)
+                EdgeTool.delivery_charge_changer('coupang', coupang_prd_list_url, isDeliveryCharge=delivery_charge_var_coupang.get() == "True")
+                break
+            except ElementClickInterceptedException:
+                    message = "[!] Element intercepted while daily.\n"
+                    EdgeTool.append_to_text_widget(message, "red")
+                    EdgeTool.scroll_downer(250)
+                    message = "[*] Element intercepted fixed while daily.\n"
+                    EdgeTool.append_to_text_widget(message, "blue")
 # Initialize the main window
 root = tk.Tk()
 root.title("Automation Tool")
@@ -680,6 +738,8 @@ prd_filtering_btn = tk.Button(root, text="Product filtering", command=prd_filter
 gathering_order_btn = tk.Button(root, text="Order gathering", command=gathering_order_action)
 prd_exsition_comparing_btn = tk.Button(root, text="Product existion checking", command=prd_exsition_comparing_action)
 return_manager_btn = tk.Button(root, text="Return management", command=return_manager_action)
+naver_duplicate_handling_btn = tk.Button(root, text="Naver duplicate handling", command=naver_duplicate_handling_action('today'))
+delivery_charge_changer_btn = tk.Button(root, text="Delivery charge Changing(coupang)", command=delivery_charge_changer_action)
 
 webdriver_btn.pack()
 # sourcing_btn.pack()
@@ -691,6 +751,8 @@ prd_stat_checking_btn.pack()
 prd_filtering_btn.pack()
 gathering_order_btn.pack()
 return_manager_btn.pack()
+naver_duplicate_handling_btn.pack()
+delivery_charge_changer_btn.pack()
 
 # Creating and placing the result Text widget
 result_text = tk.Text(root, height=25, width=60)

@@ -1064,7 +1064,7 @@ class Tool:
                         while True:
                             try:
                                 print("\r [*] Wait for the table loading...", end='')
-                                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/tbody/tr[1]/td[2]/span/input')))
                                 print()
                                 print(" [*] Table loaded successfully.")
                                 break
@@ -1074,13 +1074,13 @@ class Tool:
                                     print()
                                     print(" [*] There is no result.")
                                     break
-                        coupang_searched_num_element = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
+                        coupang_searched_num_element = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/span/span[@class="accent"]')))
                         coupang_searched_num = coupang_searched_num_element.text
                         if coupang_searched_num != "0":
-                            coupang_select_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
+                            coupang_select_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/thead/tr/th/span/input[@type="checkbox"]')))
                             time.sleep(0.5)
                             coupang_select_all_btn.click()
-                            coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/button[3]')))
+                            coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/button[contains(text(), "삭제")]')))
                             time.sleep(0.5)
                             coupang_delete_btn.click()
                             coupang_confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="container-wing-v2"]/div/div/div[@class="alert-buttons"]/button[contains(@class, "confirm") and contains(@class, "alert-confirm")]')))
@@ -1106,17 +1106,22 @@ class Tool:
             coupang_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl[2]/dd/button[2]')))
             time.sleep(0.5)
             coupang_search_btn.click()
-            show_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[2]/div/div/ul[1]/li')))
+            while True:
+                try:
+                    show_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/div/ul/li[@class="init option"]')))
+                    break
+                except Exception:
+                    time.sleep(0.5)
             time.sleep(0.5)
             show_btn.click()
-            show_500_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[2]/div/div/ul[2]/li[5]/div/div')))
+            show_500_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/div/ul[@class="selection-expand"]/li[5]/div/div')))
             time.sleep(0.5)
             show_500_btn.click()
             counter = 0
             while True:
                 try:
                     print("\r [*] Wait for the table loading...", end='')
-                    WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                    WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/tbody/tr[1]/td[2]/span/input')))
                     print()
                     print(" [*] Table loaded successfully.")
                     break
@@ -1126,7 +1131,7 @@ class Tool:
                         print()
                         print(" [*] There are no result.")
                         break
-            coupang_searched_num_element = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
+            coupang_searched_num_element = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/span/span[@class="accent"]')))
             checked_item_num = 0
             coupang_searched_num = coupang_searched_num_element.text
             if coupang_searched_num != "0":
@@ -1142,7 +1147,7 @@ class Tool:
                                 # Print a newline character at the end to move the cursor to the next line
                                 print()
                                 return prd_name_list
-                            prd_name_full = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[{i+1}]/td[5]/div[@class="product-name-block"]/span')))
+                            prd_name_full = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="rootContainer"]/div/div/div[@class="table-wrapper-container"]/div/table/tbody/tr[{i+1}]/td[5]/div[@class="product-name-block"]/span')))
                             time.sleep(0.5)
                             prd_name = prd_name_full.text.split()[0]
                             prd_name_list.append(prd_name)
@@ -1152,7 +1157,7 @@ class Tool:
                             checked_item_num += 1
                         self.driver.execute_script("window.scrollTo(0, 0);")
                         time.sleep(0.5)
-                        coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/button[3]')))
+                        coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/button[contains(text(), "삭제")]')))
                         time.sleep(0.5)
                         coupang_delete_btn.click()
                         coupang_confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="container-wing-v2"]/div/div/div[@class="alert-buttons"]/button[contains(@class, "confirm") and contains(@class, "alert-confirm")]')))
@@ -1161,12 +1166,12 @@ class Tool:
                         time.sleep(5)
                         self.driver.refresh()
                     except Exception as e:
-                        # coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
+                        # coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/thead/tr/th/span/input[@type="checkbox"]')))
                         # time.sleep(0.5)
                         # coupang_check_all_btn.click()
                         self.driver.execute_script("window.scrollTo(0, 0);")
                         time.sleep(0.5)
-                        coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/button[3]')))
+                        coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/button[contains(text(), "삭제")]')))
                         time.sleep(0.5)
                         coupang_delete_btn.click()
                         # result = self.delete_suspend_confirmator('coupang',coupang_delete_btn)
@@ -1179,7 +1184,7 @@ class Tool:
                         while True:
                             try:
                                 print("\r [*] Wait for the table loading...", end='')
-                                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/tbody/tr[1]/td[2]/span/input')))
                                 print()
                                 print(" [*] Table loaded successfully.")
                                 break
@@ -1374,7 +1379,7 @@ class Tool:
                                         smart_prd_name_list.remove(prd_name)
                             break
                     except Exception as e:
-                        # coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
+                        # coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/thead/tr/th/span/input[@type="checkbox"]')))
                         # time.sleep(0.5)
                         # coupang_check_all_btn.click()
                         # self.driver.execute_script("window.scrollTo(0, 0);")
@@ -1596,7 +1601,7 @@ class Tool:
                     while True:
                         try:
                             print("\r [*] Wait for the table loading...", end='')
-                            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/tbody/tr[1]/td[2]/span/input')))
                             print()
                             print(" [*] Table loaded successfully.")
                             break
@@ -1614,14 +1619,14 @@ class Tool:
                         break
                 if coupang_searched_num.text != "0":
                     while True:
-                        coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
+                        coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/thead/tr/th/span/input[@type="checkbox"]')))
                         time.sleep(0.5)
                         coupang_check_all_btn.click()
                         time.sleep(0.5)
-                        coupang_checked_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[1]')))
+                        coupang_checked_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div[@class="action-bar"]/div[1]')))
                         if coupang_checked_num.text.replace(',','') == coupang_searched_num.text:
                             break
-                    coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/button[3]')))
+                    coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/button[contains(text(), "삭제")]')))
                     # result = self.delete_suspend_confirmator('coupang',coupang_delete_btn)
                     time.sleep(0.5)
                     coupang_delete_btn.click()
@@ -1648,7 +1653,7 @@ class Tool:
                     while True:
                         try:
                             print("\r [*] Wait for the table loading...", end='')
-                            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/tbody/tr[1]/td[2]/span/input')))
                             print()
                             print(" [*] Table loaded successfully.")
                             break
@@ -1673,7 +1678,7 @@ class Tool:
                 # while True:
                 #     try:
                 #         print("\r [*] Wait for the table loading...", end='')
-                #         WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                #         WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/tbody/tr[1]/td[2]/span/input')))
                 #         print()
                 #         print(" [*] Table loaded successfully.")
                 #         break
@@ -1684,18 +1689,17 @@ class Tool:
                 #             print(" [*] There are no result.")
                 #             break
                     
-                    
-                coupang_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
+                coupang_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/span/span[@class="accent"]')))
                 time.sleep(0.5)
                 if coupang_searched_num.text != "0":
-                    coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/thead/tr/th[2]/span/input')))
+                    coupang_check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/thead/tr/th/span/input[@type="checkbox"]')))
                     time.sleep(0.5)
                     coupang_check_all_btn.click()
                     # coupang_change_stat_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/div[2]/div/ul[1]/li')))
                     # time.sleep(0.5)
                     # coupang_change_stat_btn.click()
                     # coupang_suspend_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/div[2]/div/ul[2]/li[3]/div/div')))
-                    coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[2]/div[3]/div[1]/button[3]')))
+                    coupang_delete_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/button[contains(text(), "삭제")]')))
                     # result = self.delete_suspend_confirmator('coupang',coupang_delete_btn)
                     time.sleep(0.5)
                     coupang_delete_btn.click()
@@ -1831,18 +1835,18 @@ class Tool:
                 time.sleep(0.5)
                 paid_shipping_btn.click()
                 time.sleep(0.5)
-                show_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[2]/div/div/ul[1]/li')))
+                show_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/div/ul/li[@class="init option"]')))
                 time.sleep(0.5)
                 show_btn.click()
                 time.sleep(0.5)
-                show_500_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[2]/div/div/ul[2]/li[5]/div/div')))
+                show_500_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/div/ul[@class="selection-expand"]/li[5]/div/div')))
                 time.sleep(0.5)
                 show_500_btn.click()
                 counter = 0
                 while True:
                     try:
                         # print("\r [*] Wait for the table loading...", end='')
-                        WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                        WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/tbody/tr[1]/td[2]/span/input')))
                         # print()
                         # print(" [*] Table loaded successfully.")
                         counter = 0
@@ -1853,13 +1857,13 @@ class Tool:
                             print(" [*] No items found.")
                             print(f"[+] Delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge} end.")
                             return
-                table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table')))
+                table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div[@class="table-wrapper-container"]/div/table')))
                 # Assuming the scrollable container is a direct parent of the table
                 scrollable_container = table.find_element(By.XPATH, "./..")
                 scroll_script = "arguments[0].scrollLeft = 3200;"  # Adjust scrollLeft for 27th column
                 self.driver.execute_script(scroll_script, scrollable_container)
                 checked_item_num = 0
-                coupang_searched_num_element = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[1]/div[1]/span/span')))
+                coupang_searched_num_element = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/span/span[@class="accent"]')))
                 coupang_searched_num = coupang_searched_num_element.text
                 while True:
                     counter = 0
@@ -1873,19 +1877,19 @@ class Tool:
                                 print(f"[+] Delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge} end.")
                                 return
                             time.sleep(0.5)
-                            shipping_edit_btn = WebDriverWait(self.driver, 2).until(EC.presence_of_element_located((By.XPATH, f"//*[@id='rootContainer']/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[{i+1}]/td[27]")))
+                            shipping_edit_btn = WebDriverWait(self.driver, 2).until(EC.presence_of_element_located((By.XPATH, f"//*[@id='rootContainer']/div/div/div[@class='table-wrapper-container']/div/table/tbody/tr[{i+1}]/td[27]")))
                             time.sleep(0.5)
                             shipping_edit_btn.click()
                             time.sleep(0.5)
-                            paid_delivery_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[2]/div[2]/div[2]/div/div/div[6]/div/div[1]/div/div[2]/div/div/ul[1]/li')))
+                            paid_delivery_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/div/div/div/div/div[@class="wrapper"]/div/div/div/div/div/div/ul/li[@class="init option"]')))
                             time.sleep(0.5)
                             paid_delivery_btn.click()
                             time.sleep(0.5)
-                            free_shipping_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[2]/div[2]/div[2]/div/div/div[6]/div/div[1]/div/div[2]/div/div/ul[2]/li[1]/div')))
+                            free_shipping_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div/ul/li[1]/div/div[contains(text(),"무료배송")]')))
                             time.sleep(0.5)
                             free_shipping_btn.click()
                             time.sleep(0.5)
-                            save_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[4]/div/div/div[3]/div/button[2]')))
+                            save_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div[4]/div/div/div/div/button[contains(text(),"저장")]')))
                             time.sleep(0.5)
                             save_btn.click()
                             time.sleep(0.5)
@@ -1899,7 +1903,7 @@ class Tool:
                         while True:
                             try:
                                 # print("\r [*] Wait for the table loading...", end='')
-                                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table/tbody/tr[1]/td[2]/span/input')))
+                                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/table/tbody/tr[1]/td[2]/span/input')))
                                 # print()
                                 # print(" [*] Table loaded successfully.")
                                 break
@@ -1910,7 +1914,7 @@ class Tool:
                                     print(" [*] No items found.")
                                     break
                         if counter != 3:
-                            table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div[6]/div[2]/div[3]/div[1]/table')))
+                            table = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div[@class="table-wrapper-container"]/div/table')))
                             # Assuming the scrollable container is a direct parent of the table
                             scrollable_container = table.find_element(By.XPATH, "./..")
                             scroll_script = "arguments[0].scrollLeft = 3200;"  # Adjust scrollLeft for 27th column
@@ -2049,6 +2053,7 @@ class Tool:
     
     def discountRateSetting(self, store_name):
         print("[+] Pricing start.")
+        self.driver.refresh()
         if store_name == 'smart':
             while True:
                 # Check for the existing smart_discount_rate_daily
@@ -2151,6 +2156,55 @@ class Tool:
                         break
         # elif store_name == 'coupang':
 
+    def naverDuplicateHandler(self, search_duration):
+        self.driver.refresh()
+        print("[+] Download fixable form process start.")
+        if search_duration == 'all':
+            duration_all = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//button[contains(text(), "전체")]')))
+            time.sleep(0.5)
+            duration_all.click()
+        if search_duration == 'month':
+            duration_month = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//button[contains(text(), "1개월")]')))
+            time.sleep(0.5)
+            duration_month.click()
+        if search_duration == 'today':
+            duration_today = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//button[contains(text(), "오늘")]')))
+            time.sleep(0.5)
+            duration_today.click()
+        smart_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[2]/div/button[1]')))
+        time.sleep(0.5)
+        smart_search_btn.click()
+        counter = 0
+        while True:
+            try:
+                print("\r [*] Wait for the table loading...", end='')
+                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div/ui-view/div/div/div/div/div/div/div/div/div/div[@row-index="0"]/div/div[@class="ag-cell-wrapper"]')))
+                print()
+                print(" [*] Table loaded successfully.")
+                break
+            except Exception:
+                counter += 1
+                if counter >= 2:
+                    print()
+                    print(" [*] There are no result.")
+                    break
+        # Click the xlsx dropdown
+        dropdown_xlsx = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div/ui-view/div/div/div/div/div/div[3]/div/div[@class="item"]')))
+        dropdown_xlsx.click()
+        # Click the xlsx product list form
+        prd_list_download = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div/ui-view/div/div/div/div/div/div/div/div/div[@data-value="PRODUCT_DOWNLOAD"]')))
+        prd_list_download.click()
+        # Read the correction form and Edit
+        prd_list_coupang_df = self.sourcing.downloadChecker('/Users/papag/Downloads', "스마트스토어상품", first_phase=False)
+        # Find duplicate rows based on '상품명' column (keeping the first occurrence as unique)
+        duplicates = prd_list_coupang_df[prd_list_coupang_df.duplicated('상품명', keep=False)]
+        # Sort the DataFrame by '상품명' to see duplicates next to each other
+        duplicates_sorted = duplicates.sort_values('상품명')
+        # Print out the duplicates
+        duplicated_prd_list = duplicates_sorted['판매자상품코드'].to_list()
+        unique_duplicated_prd_list = list(set(duplicated_prd_list))
+        print("[+] Get duplicate products process end.")
+        return unique_duplicated_prd_list
 
 
 
