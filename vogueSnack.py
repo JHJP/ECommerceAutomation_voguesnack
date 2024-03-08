@@ -164,6 +164,8 @@ class Sourcing:
             time.sleep(1)
             files = os.listdir(download_path)
             matching_files = [file for file in files if file.startswith(file_prefix)]
+            if not matching_files and file_prefix == '스마트스토어상품':
+                matching_files = [file for file in files if file.startswith('Product')]
             if not matching_files and counter < 3:
                 print(f"\r [*] Confirming {file_prefix} file download..", end='')
                 counter += 1
@@ -1488,21 +1490,25 @@ class Tool:
             try:
                 time.sleep(0.5)
                 self.driver.switch_to.window(self.driver.window_handles[5])
+                print(" [*] Move to the ordering popup page success.")
                 time.sleep(0.5)
                 order_send_point_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*[@id='order_send_btn']")))
+                print(" [*] Order button clicked success.")
                 break
             except Exception:
                 time.sleep(0.5)
-                print("[+] Ordergathering exception")
+                print(" [!] Ordergathering exception")
+                self.driver.switch_to.window(self.driver.window_handles[2])
         time.sleep(0.5)
         order_send_point_btn.click()
         alert_text = self.popupHandler(3, 'onchan')
         if "부족합니다" in alert_text:
             point_recharge_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "/html/body/div/ul/li/p/a/button[@class='pnt_charge_btn']")))
             point_recharge_btn.click()
-            print(" [*] Recharge the point and try again.")
+            message = " [!] Ordefing: Recharge the point and try again.\n"
+            self.append_to_text_widget(message, "red")
             return
-        self.driver.switch_to.window(self.driver.window_handles[2])# comp back to the onchan page.
+        self.driver.switch_to.window(self.driver.window_handles[2])# come back to the onchan page.
         while True:
             try:
                 confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@class='order_lightbox']/div[@class='order_complete_box modal']/div[@class='modal_btn_wrap']/a[@class='confirm_btn']")))
