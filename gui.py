@@ -279,7 +279,7 @@ def prd_stat_checking_action():
                 driver.switch_to.window(window_onchan)
                 EdgeSourcing.pageNavigator(onchan_prd_stat_url)
                 # Deleting or Suspending procedure.
-                out_of_stock_prd_string, out_of_stock_prd_temp_string = EdgeTool.out_of_stock_checker()
+                out_of_stock_prd_string, out_of_stock_prd_temp_string = EdgeTool.out_of_stock_checker(False)
                 out_of_stock_prd_list = out_of_stock_prd_string.split(',')
                 out_of_stock_prd_temp_list = out_of_stock_prd_temp_string.split(',')
                 out_of_stock_prd_list.extend(out_of_stock_prd_temp_list)
@@ -308,7 +308,6 @@ def prd_stat_checking_action():
                 if not all_phase_done:
                     driver.switch_to.window(window_onchan)
                     EdgeSourcing.pageNavigator(onchan_prd_stat_url)
-                    # EdgeTool.popupHandler(3, 'onchan')
                     EdgeTool.out_of_stock_finisher()
                     # Move to the product management page and delete the product.
                     '''
@@ -600,6 +599,11 @@ def delivery_charge_changer_action():
                     EdgeTool.scroll_downer(250)
                     message = "[*] Element intercepted fixed while daily.\n"
                     EdgeTool.append_to_text_widget(message, "blue")
+
+def out_of_stock_finisher_action():
+    driver.switch_to.window(window_onchan)
+    EdgeSourcing.pageNavigator(onchan_prd_stat_url)
+    EdgeTool.out_of_stock_finisher()
 # Initialize the main window
 root = tk.Tk()
 root.title("Automation Tool")
@@ -745,6 +749,7 @@ prd_exsition_comparing_btn = tk.Button(root, text="Product existion checking", c
 return_manager_btn = tk.Button(root, text="Return management", command=return_manager_action)
 naver_duplicate_handling_btn = tk.Button(root, text="Naver duplicate handling", command=naver_duplicate_handling_action)
 delivery_charge_changer_btn = tk.Button(root, text="Delivery charge Changing(coupang)", command=delivery_charge_changer_action)
+out_of_stock_finisher_btn = tk.Button(root, text="Out of stock finishing", command=out_of_stock_finisher_action)
 
 webdriver_btn.pack()
 # sourcing_btn.pack()
@@ -758,6 +763,7 @@ gathering_order_btn.pack()
 return_manager_btn.pack()
 naver_duplicate_handling_btn.pack()
 # delivery_charge_changer_btn.pack()
+# out_of_stock_finisher_btn.pack()
 
 # Creating and placing the result Text widget
 result_text = tk.Text(root, height=25, width=60)

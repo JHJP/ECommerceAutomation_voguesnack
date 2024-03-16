@@ -362,8 +362,9 @@ class Sourcing:
             print("[+] Daily sourcing start.: sellha")
             windows = self.driver.window_handles
             self.driver.switch_to.window(windows[3])
+            self.pageNavigator('https://sellha.kr/')
             for i in range(1,15):
-                best_keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="root"]/section/main/div[2]/div[1]/div[3]/div[3]/div[1]/div[2]/div/div[{i}]/div[2]')))
+                best_keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="root"]/section/main/div/div/div/div/div/div/div/div[{i}]/div[@class="sc-gIgeMy wWyvs"]')))
                 best_keyword_text = best_keyword.text
                 naver_keyword_list.append(best_keyword_text)
                 percent = int((i/14)*100)
@@ -637,8 +638,7 @@ class Uploading:
                         # if isDaily:
                         #     print(f"[+] keyword typed in successfully: {target}")
                         # Click on Search Button
-                        WebDriverWait(driver=self.driver, timeout=30).until(EC.presence_of_element_located((By.CLASS_NAME, 'search_btn')))
-                        search_btn = self.driver.find_element(By.CLASS_NAME, 'search_btn')
+                        search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//span[@class="search_btn"]')))
                         search_btn.click()
                         # print("[+] search button clicked successfully")
                         time.sleep(3)
@@ -1524,8 +1524,8 @@ class Tool:
         if len(checkboxes) <= 1:
             print("[+] Finisher: Out of stock products no exist.")
             return 
-        check_out_of_stock_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/a[2]/button')))
-        check_out_of_stock_btn.click()
+        # check_out_of_stock_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/a[2]/button')))
+        # check_out_of_stock_btn.click()
         select_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/input')))
         select_all_btn.click()
         select_del_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/a[@class="btn_sel_del"]')))
@@ -1534,11 +1534,16 @@ class Tool:
         self.popupHandler(5, 'onchan')
         print("[+] Finisher: Handling out of stock products finish.")
         
-    def out_of_stock_checker(self):
+    def out_of_stock_checker(self, isAdvanced):
+        '''
+        isAdvanced = False:
+        Delete all the state changed product include:
+        '단종, 품절, 일시품절,...,상세페이지변동,가격변동..
+        '''
         # Assume that we are in the onchan out of stock page.
-        check_out_of_stock_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/a[2]/button')))
-        time.sleep(0.5)
-        check_out_of_stock_btn.click()
+        # check_out_of_stock_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/a[2]/button')))
+        # time.sleep(0.5)
+        # check_out_of_stock_btn.click()
         checkboxes = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@type="checkbox"]')))
         time.sleep(0.5)
         if len(checkboxes) <= 1:
@@ -1557,10 +1562,14 @@ class Tool:
         new_header = out_of_stock_df.iloc[0]  # Grab the first row for the header
         out_of_stock_df = out_of_stock_df[1:]
         out_of_stock_df.columns = new_header  # Set the header row as the df header
-        new_out_of_stock_df = out_of_stock_df.loc[out_of_stock_df['분류'].isin(['단종', '품절'])] # Grab the 상품코드 which 분류 is 단종 or 품절
-        new_out_of_stock_df.drop_duplicates(subset='상품코드', inplace=True)
-        new_out_of_stock_temp_df = out_of_stock_df.loc[out_of_stock_df['분류'].isin(['일시품절', '옵션품절'])] # Grab the 상품코드 which 분류 is 일시품절 or 옵션품절
-        new_out_of_stock_temp_df.drop_duplicates(subset='상품코드', inplace=True)
+        if isAdvanced: # Not developped yet
+            new_out_of_stock_df = out_of_stock_df.loc[out_of_stock_df['분류'].isin(['단종', '품절'])] # Grab the 상품코드 which 분류 is 단종 or 품절
+            new_out_of_stock_df.drop_duplicates(subset='상품코드', inplace=True)
+            new_out_of_stock_temp_df = out_of_stock_df.loc[out_of_stock_df['분류'].isin(['일시품절', '옵션품절'])] # Grab the 상품코드 which 분류 is 일시품절 or 옵션품절
+            new_out_of_stock_temp_df.drop_duplicates(subset='상품코드', inplace=True)
+        elif not isAdvanced:
+            new_out_of_stock_df = out_of_stock_df
+            new_out_of_stock_temp_df = out_of_stock_df
         # Sending the out of stock prd codes to coupang and smartstre and delete them.
         if len(new_out_of_stock_df) != 0:
             product_codes = new_out_of_stock_df['상품코드'].astype(str).tolist()
@@ -1956,6 +1965,7 @@ class Tool:
                     prd_image.click()
                 except Exception:
                     self.driver.execute_script("window.stop();") # stop loading the page
+                    print("Onchan: product detail didn't load properlly")
                 # Get if price autonomy or not
                 price_autonomy_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[3]/ul/li[3]/div[2]/span')))
                 price_autonomy_detail_text = price_autonomy_detail.text
