@@ -234,7 +234,7 @@ class Sourcing:
                 isEdited = preprocessed_df['isEdited'][i]
 
                 if not isEdited:
-                    decision = input(f"({i}/{len(preprocessed_df)}), {preprocessed_df.iloc[i]['키워드']}; Tell me the word you want to change (1=delete, 2=maintain, 3=undo): ")
+                    decision = input(f"({i}/{len(preprocessed_df)}), {preprocessed_df.iloc[i]['키워드']}; Tell me the word you want to change (1=delete, 2=maintain, 3=undo, 4=save&exit): ")
                     if decision == '3' and history:
                         preprocessed_df = history.pop()  # Revert to the last state
                         if i > 0:
@@ -269,6 +269,14 @@ class Sourcing:
                                 break
                             except PermissionError:
                                 print("Permission error occuer. Close the opened file named preprocesedSourced.csv.")
+                    elif decision == '4':
+                        while True:
+                            try:
+                                preprocessed_df.to_csv(csv_name, encoding='utf-8-sig', index = False)
+                                break
+                            except PermissionError:
+                                print("Permission error occuer. Close the opened file named preprocesedSourced.csv.")
+                        break
                     else: # Change the keyword
                         preprocessed_df.at[i, '바꾼키워드'] = decision
                         preprocessed_df.at[i, 'isEdited'] = True
@@ -1511,7 +1519,9 @@ class Tool:
         self.driver.switch_to.window(self.driver.window_handles[2])# come back to the onchan page.
         while True:
             try:
+                time.sleep(0.5)
                 confirm_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, "//*[@class='order_lightbox']/div[@class='order_complete_box modal']/div[@class='modal_btn_wrap']/a[@class='confirm_btn']")))
+                time.sleep(0.5)
                 confirm_btn.click()
                 break
             except Exception:
