@@ -1965,7 +1965,8 @@ class Tool:
         for i in range(len(rating_list)):
             rating_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li//dd[@class="total_start_num"]')))
             uploaded_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li/dl/dd/span[@class="sale_state"]')))
-            if rating_list[i].text == '신규' or rating_list[i].text == 'NaN' or uploaded_list[i].text == '판매신청완료':
+            prd_name_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li/dl/dt[@class="product_title"]')))
+            if rating_list[i].text == '신규' or rating_list[i].text == 'NaN' or uploaded_list[i].text == '판매신청완료' or prd_name_list[i].text == '온채널 테스트 상품':
                 continue
             rating = float(rating_list[i].text)
             if rating > rate_lowering:
