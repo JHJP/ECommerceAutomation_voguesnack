@@ -7,7 +7,7 @@ from vogueSnack import Sourcing, Uploading, Tool
 from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.edge.service import Service
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
+# from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from tkinter import messagebox
 from datetime import datetime, timedelta
 import dateutil.relativedelta
@@ -39,7 +39,8 @@ onchan_login_btn = '.btn.btn-lg.btn-primary.btn-block'
 smart_login_btn = 'ul.panel_wrap li.panel_item .panel_inner .btn_login_wrap .btn_login'
 coupang_loginbtn = '.cp-loginpage__form__submit'
 
-base_path = '/Users/papag/OneDrive/src/Projects/vogueSnack'
+# base_path = '/Users/papag/OneDrive/src/Projects/vogueSnack' # Laptop(master)
+base_path = '/Users/papag/OneDrive/desktop/vogueSnack' # Desktop
 download_path = '/Users/papag/Downloads'
 file_prefix_all = "셀하 아이템 발굴 EXCEL_전체"
 file_prefix_editable = "스마트스토어상품"
@@ -56,9 +57,9 @@ def set_default_text():
     smart_pw_entry.insert(0,"rq3.XW.NzXuaCc8")
     coupang_id_entry.insert(0,"voguesnack")
     coupang_pw_entry.insert(0,"9w_kPvtu8Qcj93u")
-    net_profit_ratio_entry.insert(0, "15")
+    net_profit_ratio_entry.insert(0, "10")
     min_rating_entry.insert(0, "4.5")
-    prd_max_num_entry.insert(0, "15")
+    prd_max_num_entry.insert(0, "30")
     min_searched_num_entry.insert(0, "10000")
     sourcing_size_entry.insert(0, "150")
 
@@ -89,7 +90,7 @@ def sourcing_action():
     before_formatted_date = f"{before_date.year}-{before_date.month}"
     isDownloaded_sellha_df_current = EdgeSourcing.downloadChecker('/Users/papag/Downloads', f"셀하 아이템 발굴 EXCEL_전체_{current_formatted_date}", first_phase=True)
     # isDownloaded_sellha_df_before = EdgeSourcing.downloadChecker('/Users/papag/Downloads', f"셀하 아이템 발굴 EXCEL_전체_{before_formatted_date}", first_phase=False)
-    isDownloaded_sourced = EdgeSourcing.downloadChecker('/Users/papag/OneDrive/src/Projects/vogueSnack', "sourced.csv", first_phase=True)
+    isDownloaded_sourced = EdgeSourcing.downloadChecker(base_path, "sourced.csv", first_phase=True)
     print("[+] Sourcing phase start.")
     while True:
             try:
@@ -204,7 +205,7 @@ def daily_sourcing_uploading_action():
     while True:
             try:
                 driver.switch_to.window(window_empty)
-                naver_sourced_df = EdgeSourcing.daily_sourcing()
+                naver_sourced_df = EdgeSourcing.daily_sourcing(base_path)
                 naver_sourced_isEdited_df = EdgeSourcing.targetListMaker(naver_sourced_df, isDaily=True)
                 driver.switch_to.window(window_onchan)
                 EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, min_rating, prd_max_num, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=margin_descend_var.get() == "True")
@@ -378,6 +379,7 @@ def prd_filtering_action():
 
     while True:
         try:
+            print("[+] Filtering start.")
             if not coupang_filtering_done:
                 driver.switch_to.window(window_coupang)
                 EdgeSourcing.pageNavigator(coupang_prd_list_url)
@@ -762,7 +764,7 @@ prd_filtering_btn.pack()
 gathering_order_btn.pack()
 return_manager_btn.pack()
 naver_duplicate_handling_btn.pack()
-# delivery_charge_changer_btn.pack()
+delivery_charge_changer_btn.pack()
 # out_of_stock_finisher_btn.pack()
 
 # Creating and placing the result Text widget
@@ -807,6 +809,7 @@ def schedule_actions():
 
     # Schedule Daily Button to enqueue task
     schedule.every().day.at("10:00").do(lambda: enqueue_task(lambda: daily_btn.invoke()))
+    schedule.every().day.at("20:00").do(lambda: enqueue_task(lambda: daily_btn.invoke()))
 
     # Schedule Product Status Checking Button every 30 minutes to enqueue task
     def enqueue_prd_stat_checking_if_within_time():
@@ -824,8 +827,11 @@ def schedule_actions():
     # Schedule Product Filtering Button every 6 hours to enqueue task
     schedule.every(3).hours.do(enqueue_prd_filtering_if_within_time)
 
-    # Schedule Gathering Order Button every 3 hours to enqueue task
-    schedule.every(3).hours.do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
+    # Schedule Gathering Order Button every 1 minutes to enqueue task
+    schedule.every().day.at("07:00").do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
+    schedule.every().day.at("13:00").do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
+    schedule.every().day.at("17:00").do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
+    
 
 if __name__ == "__main__":
     set_default_text()

@@ -193,6 +193,7 @@ class Sourcing:
                         df = pd.concat(dictionary, ignore_index=True)
                         print(f"[+] {file_prefix} read with excel successfully.")
                     except Exception as e:
+                        print(e)
                         if file_extension.lower() == '.csv':
                             try:
                                 print(e)
@@ -216,7 +217,10 @@ class Sourcing:
             csv_name = 'preprocesedSourced.csv'
         elif isDaily:
             csv_name = 'preprocessedNaverSourced.csv'
-        files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
+        try:
+            files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
+        except Exception:
+            files = os.listdir('/Users/papag/OneDrive/desktop/vogueSnack')
         matching_files = [file for file in files if file == csv_name]
         if matching_files:
             preprocessed_df = pd.read_csv(csv_name)
@@ -335,8 +339,11 @@ class Sourcing:
         df = df.head(sourcing_size)
         return df
 
-    def daily_sourcing(self):
-        files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
+    def daily_sourcing(self, base_path):
+        try:
+            files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
+        except Exception:
+            files = os.listdir('/Users/papag/OneDrive/desktop/vogueSnack')
         matching_files = [file for file in files if file == 'naverSourced.csv']
         if not matching_files:
             # Append data from the naver data lab
@@ -481,8 +488,15 @@ class Uploading:
                     time.sleep(0.5)
                     # Check if there are more than one option
                     retail_price_inputs = []
-                    retail_price_inputs = WebDriverWait(self.driver, 2).until(EC.presence_of_all_elements_located(
-                        (By.XPATH, f'/html/body/div[3]/section/div/div[3]/ul/li[{i + 1}]/ul/li[3]/div/ul/li/ul/li[2]/input[1]')))
+                    try:
+                        retail_price_inputs = WebDriverWait(self.driver, 2).until(EC.presence_of_all_elements_located(
+                        (By.XPATH, f'/html/body/div/section/div/div/ul/li[{i + 1}]/ul/li/div/ul/li/ul/li/input[@name="coupang_option_modi_val"]')))
+                    except TimeoutException:
+                        done_btn = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located(
+                            (By.XPATH, f"/html/body/div[3]/section/div/div[3]/ul/li[{i + 1}]/ul/li[3]/div/div[2]/button[1]")))
+                        done_btn.click()
+                        i += 1
+                        break
                     isOpions = True
                     if len(retail_price_inputs) == 1:
                         isOpions = False
@@ -557,8 +571,16 @@ class Uploading:
                             discount_rate = 0
                     # Check if there are more than one option
                     retail_price_inputs = []
-                    retail_price_inputs = WebDriverWait(self.driver, 2).until(EC.presence_of_all_elements_located(
+                    
+                    try:
+                        retail_price_inputs = WebDriverWait(self.driver, 2).until(EC.presence_of_all_elements_located(
                         (By.XPATH, f'/html/body/div/section/div/div/ul/li[{i + 1}]/ul/li/div/ul/li/ul/li/input[@name="smart_option_modi_val"]')))
+                    except TimeoutException:
+                        done_btn = WebDriverWait(self.driver, 1).until(EC.presence_of_element_located(
+                            (By.XPATH, f"/html/body/div[3]/section/div/div[2]/ul/li[{i + 1}]/ul/li[3]/div/div[2]/button[1]")))
+                        done_btn.click()
+                        i += 1
+                        break
                     isOpions = True
                     if len(retail_price_inputs) == 1:
                         isOpions = False
@@ -595,7 +617,10 @@ class Uploading:
         # print(f" [*] Sending to {store_name}...")
         if discount_rate_calculation == True:
             # Check for the existing smart_discount_rate_daily
-            files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
+            try:
+                files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
+            except Exception:
+                files = os.listdir('/Users/papag/OneDrive/desktop/vogueSnack')
             # Check if there is a smart_discount_rate_daily.csv
             matching_files = [file for file in files if file.startswith("smart_discount_rate_daily")]
             if matching_files:
@@ -617,7 +642,10 @@ class Uploading:
             csv_name = 'preprocesedSourcedUpdated.csv'
         elif isDaily:
             csv_name = 'preprocesednaverSourcedUpdated.csv'
-        files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
+        try:
+            files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
+        except Exception:
+            files = os.listdir('/Users/papag/OneDrive/desktop/vogueSnack')
         # Check if there is a preprocessedSourcedUpdated.csv
         matching_files = [file for file in files if file == csv_name]
         if matching_files:
@@ -1638,8 +1666,11 @@ class Tool:
                                 break
                     time.sleep(5)
                     coupang_searched_num = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//span[@class="accent"]')))
+                    time.sleep(1)
                     coupang_searched_num_int = int(coupang_searched_num.text.replace(',',''))
+                    time.sleep(1)
                     out_of_stock_prd_string_num_int = len(out_of_stock_prd_string.split(','))
+                    time.sleep(1)
                     if coupang_searched_num_int <= out_of_stock_prd_string_num_int:
                         break
                 if coupang_searched_num.text != "0":
@@ -1867,6 +1898,10 @@ class Tool:
                 show_500_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="rootContainer"]/div/div/div/div/div/div/ul[@class="selection-expand"]/li[5]/div/div')))
                 time.sleep(0.5)
                 show_500_btn.click()
+                time.sleep(0.5)
+                coupang_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="searchContainer"]/dd/div/dl/dd/button[contains(text(), "검색") and not(contains(text(), "상세"))]')))
+                time.sleep(0.5)
+                coupang_search_btn.click()
                 counter = 0
                 while True:
                     try:
@@ -2114,7 +2149,10 @@ class Tool:
                     print("[+] Download fixable form process end.")
                 else:
                     # Check for the existing smart_discount_rate_daily
-                    files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack')
+                    try:
+                        files = os.listdir('/Users/papag/OneDrive/src/Projects/vogueSnack') # Laptop(master) location
+                    except Exception:
+                        files = os.listdir('/Users/papag/OneDrive/desktop/vogueSnack') # Desktop location
                     # Check if there is a smart_discount_rate_daily.csv
                     matching_files = [file for file in files if file.startswith("스마트스토어상품_할인률추가")]
                     if not matching_files:
@@ -2214,7 +2252,8 @@ class Tool:
                 if counter >= 2:
                     print()
                     print(" [*] There are no result.")
-                    break
+                    print("[+] Get duplicate products process end.")
+                    return []
         # Click the xlsx dropdown
         dropdown_xlsx = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div/ui-view/div/div/div/div/div/div[3]/div/div[@class="item"]')))
         dropdown_xlsx.click()
