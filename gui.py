@@ -828,9 +828,9 @@ def schedule_actions():
     schedule.every(3).hours.do(enqueue_prd_filtering_if_within_time)
 
     # Schedule Gathering Order Button every 1 minutes to enqueue task
-    schedule.every().day.at("07:00").do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
-    schedule.every().day.at("13:00").do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
-    schedule.every().day.at("17:00").do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
+    # schedule.every().day.at("07:00").do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
+    # schedule.every().day.at("13:00").do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
+    # schedule.every().day.at("17:00").do(lambda: enqueue_task(lambda: gathering_order_btn.invoke()))
     
 
 if __name__ == "__main__":
