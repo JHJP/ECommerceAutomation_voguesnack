@@ -184,6 +184,7 @@ def monthly_sourcing_uploading_action():
     EdgeTool.delivery_charge_changer('coupang', coupang_prd_list_url, isDeliveryCharge=delivery_charge_var_coupang.get() == "True")
     naver_duplicate_handling_action()
     print("[+] Monthly phase end.")
+    EdgeTool.dummy_deleter(base_path, 'preprocesedSourcedUpdated')
 
 def daily_sourcing_uploading_action():
     print("[+] Daily sourcing & uploading start.")

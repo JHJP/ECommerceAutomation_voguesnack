@@ -14,6 +14,7 @@ import re
 import tkinter.messagebox as messagebox 
 from datetime import datetime, timedelta
 import dateutil.relativedelta
+import math
 
 class Sourcing:
     def __init__(self, driver, tool=None):
@@ -291,6 +292,8 @@ class Sourcing:
                             except PermissionError:
                                 print("Permission error occuer. Close the opened file named preprocesedSourced.csv.")
                 i += 1
+        if decision == '4':
+            return 'saveAndExit'
         if not isDaily:
             preprocessed_df.drop_duplicates(subset='바꾼키워드', inplace=True)
             while True:
@@ -652,6 +655,8 @@ class Uploading:
             preprocessed_df = pd.read_csv(csv_name)
         if not isDaily:
             targetList = preprocessed_df['바꾼키워드'].tolist()
+            # Delete nan value from the list
+            targetList = [x for x in targetList if not (isinstance(x, float) and math.isnan(x))]
         originalList = preprocessed_df['키워드'].tolist()
         if isDaily:
             targetList = originalList
@@ -695,6 +700,7 @@ class Uploading:
                                     # print("[+] Sending to Store passed.")
                                     preprocessed_df.loc[i, 'isSearched'] = True
                                     preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                                    preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
                                     break
 
                                 else:
@@ -705,6 +711,7 @@ class Uploading:
                                     self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
                                     preprocessed_df.loc[i, 'isSearched'] = True
                                     preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                                    preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
                                     break
                             else:
                                 # Automatic checker
@@ -717,6 +724,7 @@ class Uploading:
                                     # print(" [*] Sending to Store passed.")
                                     preprocessed_df.loc[i, 'isSearched'] = True
                                     preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                                    preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
                                     break
                                 else:
                                     smt_btn_path = "//div[@onclick='smartstore_download()']"
@@ -726,6 +734,7 @@ class Uploading:
                                     self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
                                     preprocessed_df.loc[i, 'isSearched'] = True
                                     preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                                    preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
                                     break
 
                         except NoSuchElementException:
@@ -733,6 +742,7 @@ class Uploading:
                             # print(" [*] Not exist")
                             preprocessed_df.loc[i, 'isSearched'] = True
                             preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                            preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
                             break
                     percent = int(((i+1)/int(len(targetList)))*100)
                     print(f"\r [*] {percent}% complete..", end='')
