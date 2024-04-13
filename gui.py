@@ -58,7 +58,7 @@ def set_default_text():
     coupang_id_entry.insert(0,"voguesnack")
     coupang_pw_entry.insert(0,"9w_kPvtu8Qcj93u")
     net_profit_ratio_entry.insert(0, "10")
-    min_rating_entry.insert(0, "4.5")
+    min_rating_entry.insert(0, "3.5")
     prd_max_num_entry.insert(0, "30")
     min_searched_num_entry.insert(0, "10000")
     sourcing_size_entry.insert(0, "150")
