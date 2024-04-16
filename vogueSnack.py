@@ -292,8 +292,6 @@ class Sourcing:
                             except PermissionError:
                                 print("Permission error occuer. Close the opened file named preprocesedSourced.csv.")
                 i += 1
-        if decision == '4':
-            return 'saveAndExit'
         if not isDaily:
             preprocessed_df.drop_duplicates(subset='바꾼키워드', inplace=True)
             while True:
@@ -705,9 +703,8 @@ class Uploading:
 
                                 else:
                                     smt_btn_path = "//div[@onclick='smartstore_download()']"
-                                    coup_btn_path = "/html/body/div[3]/section/div/div[1]/div[4]"
-                                    # print(f"Current item number info: ({i+1}/{len(targetList)})")
-                                    self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
+                                    # Coupang and Smart restrict the number of items, I stopped sending like below.
+                                    # self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
                                     self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
                                     preprocessed_df.loc[i, 'isSearched'] = True
                                     preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
