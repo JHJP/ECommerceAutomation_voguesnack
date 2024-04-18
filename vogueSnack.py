@@ -704,7 +704,7 @@ class Uploading:
                                 else:
                                     smt_btn_path = "//div[@onclick='smartstore_download()']"
                                     # Coupang and Smart restrict the number of items, I stopped sending like below.
-                                    # self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
+                                    self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
                                     self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
                                     preprocessed_df.loc[i, 'isSearched'] = True
                                     preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
