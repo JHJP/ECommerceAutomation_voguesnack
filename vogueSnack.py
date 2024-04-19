@@ -380,7 +380,7 @@ class Sourcing:
             self.driver.switch_to.window(windows[3])
             self.pageNavigator('https://sellha.kr/')
             for i in range(1,15):
-                best_keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="root"]/section/main/div/div/div/div/div/div/div/div[{i}]/div[@class="sc-gIgeMy wWyvs"]')))
+                best_keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="root"]/section/main/div/div/div/div/div/div/div/div[{i}]/div[@class="sc-eKNumk fFhhaT"]')))
                 best_keyword_text = best_keyword.text
                 naver_keyword_list.append(best_keyword_text)
                 percent = int((i/14)*100)
