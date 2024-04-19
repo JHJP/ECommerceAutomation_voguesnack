@@ -759,6 +759,10 @@ class Tool:
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
 
+    def outdated_prd_deleter(self):
+        print("[+] outdated product deletion start.") 
+        print("[+] outdated product deletion end.") 
+
     def return_manager_onchan_handler(self):
         time.sleep(0.5)
         self.driver.switch_to.window(self.driver.window_handles[5])
