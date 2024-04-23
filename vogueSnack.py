@@ -2020,11 +2020,17 @@ class Tool:
                     self.driver.execute_script("window.stop();") # stop loading the page
                     print("Onchan: product detail didn't load properlly")
                 # Get if price autonomy or not
-                price_autonomy_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[3]/ul/li[3]/div[2]/span')))
-                price_autonomy_detail_text = price_autonomy_detail.text
-                prd_price = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div/section/div/div/div/div/div[@class="prod_cus_price"]')))
-                prd_price_text = prd_price.text.strip().replace('원','')
-                if price_autonomy_detail_text == "가격자율" and prd_price_text != "0":
+                try:
+                    prd_adult = WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[1]/p')))
+                    is_adult = True
+                except Exception:
+                    is_adult = False
+                if not is_adult:
+                    price_autonomy_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[3]/ul/li[3]/div[2]/span')))
+                    price_autonomy_detail_text = price_autonomy_detail.text
+                    prd_price = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div/section/div/div/div/div/div[@class="prod_cus_price"]')))
+                    prd_price_text = prd_price.text.strip().replace('원','')
+                if not is_adult and price_autonomy_detail_text == "가격자율" and prd_price_text != "0":
                     # Get delevery charge(lower, max)
                     delivery_fee_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[4]/ul/li[1]/div[2]')))
                     delivery_fee_detail_text = delivery_fee_detail.text
