@@ -800,17 +800,19 @@ def enqueue_task(task):
     task_queue.put(task)
 
 def schedule_actions():
-    # Schedule Monthly Button to enqueue task
-    def check_and_enqueue_monthly_task():
-        current_date = datetime.now()
-        # Check if today is the first day of the month
-        if current_date.day == 1:
-            enqueue_task(lambda: monthly_btn.invoke())
-    schedule.every().day.at("17:00").do(check_and_enqueue_monthly_task)
+    # # Schedule Monthly Button to enqueue task
+    # def check_and_enqueue_monthly_task():
+    #     current_date = datetime.now()
+    #     # Check if today is the first day of the month
+    #     if current_date.day == 1:
+    #         enqueue_task(lambda: monthly_btn.invoke())
+    # schedule.every().day.at("17:00").do(check_and_enqueue_monthly_task)
 
     # Schedule Daily Button to enqueue task
-    schedule.every().day.at("10:00").do(lambda: enqueue_task(lambda: daily_btn.invoke()))
-    schedule.every().day.at("20:00").do(lambda: enqueue_task(lambda: daily_btn.invoke()))
+    def check_and_enqueue_daily_task():
+        enqueue_task(lambda: daily_btn.invoke())
+    schedule.every().day.at("10:00").do(check_and_enqueue_daily_task)
+    schedule.every().day.at("20:00").do(check_and_enqueue_daily_task)
 
     # Schedule Product Status Checking Button every 30 minutes to enqueue task
     def enqueue_prd_stat_checking_if_within_time():

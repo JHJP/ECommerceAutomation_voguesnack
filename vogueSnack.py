@@ -1575,9 +1575,9 @@ class Tool:
             return 
         # check_out_of_stock_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/a[2]/button')))
         # check_out_of_stock_btn.click()
-        select_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/input')))
+        select_all_btn = checkboxes[0]
         select_all_btn.click()
-        select_del_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/table/tbody/tr/td/a[@class="btn_sel_del"]')))
+        select_del_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//a[@class="btn_sel_del"]')))
         select_del_btn.click()
         self.popupHandler(5, 'onchan')
         self.popupHandler(5, 'onchan')
@@ -1598,10 +1598,10 @@ class Tool:
         if len(checkboxes) <= 1:
             print("[+] Out of stock products no exist.")
             return 'Empty', 'Empty'
-        select_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/input')))
+        select_all_btn = checkboxes[0]
         time.sleep(0.5)
         select_all_btn.click()
-        excel_download_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table[1]/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[4]/td/table/tbody/tr/td[2]/a[1]/button')))
+        excel_download_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//button[@class="excel_btn"]')))
         time.sleep(0.5)
         excel_download_btn.click()
         self.popupHandler(5, 'onchan')
