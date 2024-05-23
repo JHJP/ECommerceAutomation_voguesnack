@@ -57,9 +57,9 @@ def set_default_text():
     smart_pw_entry.insert(0,"rq3.XW.NzXuaCc8")
     coupang_id_entry.insert(0,"voguesnack")
     coupang_pw_entry.insert(0,"9w_kPvtu8Qcj93p")
-    net_profit_ratio_entry.insert(0, "10")
+    net_profit_ratio_entry.insert(0, "5")
     min_rating_entry.insert(0, "3.5")
-    prd_max_num_entry.insert(0, "15")
+    prd_max_num_entry.insert(0, "200")
     min_searched_num_entry.insert(0, "10000")
     sourcing_size_entry.insert(0, "150")
 
@@ -812,7 +812,7 @@ def schedule_actions():
     def check_and_enqueue_daily_task():
         enqueue_task(lambda: daily_btn.invoke())
     schedule.every().day.at("10:00").do(check_and_enqueue_daily_task)
-    schedule.every().day.at("20:00").do(check_and_enqueue_daily_task)
+    # schedule.every().day.at("20:00").do(check_and_enqueue_daily_task)
 
     # Schedule Product Status Checking Button every 30 minutes to enqueue task
     def enqueue_prd_stat_checking_if_within_time():

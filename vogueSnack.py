@@ -346,47 +346,51 @@ class Sourcing:
             files = os.listdir('/Users/papag/OneDrive/desktop/vogueSnack')
         matching_files = [file for file in files if file == 'naverSourced.csv']
         if not matching_files:
-            # Append data from the naver data lab
-            naver_datalab_url = 'https://datalab.naver.com/'
-            self.pageNavigator(naver_datalab_url)
-                # Get data
-                # Select domain
-            domain_dropdown = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div[1]/div[3]/div[1]/a')))
-            naver_keyword_list = []
-            print("[+] Daily sourcing start.: naver")
-            for i in range(3,10):
-                domain_dropdown.click()
-                time.sleep(3)
-                domain = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[3]/div[1]/ul/li[{i}]/a')))
-                domain.click()
-                # Get yesterday keyword data 1st ~ 10th
-                for j in range(10):
-                    while True:
-                        time.sleep(1)
-                        try:
-                            keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[4]/div/div[1]/div/div/div[12]/div/div/ul/li[{j+1}]/a/span'))).text
-                            naver_keyword_list.append(keyword)
-                            break
-                        except StaleElementReferenceException:
-                            print(f"Stale element Exception at domain {i}, index {j}")
-                percent = int(((i-2)/7)*100)
-                print(f"\r [*] {percent}% complete..", end='')
-                if percent == 100:
-                    # Print a newline character at the end to move the cursor to the next line
-                    print()
-            print("[+] Daily sourcing start.: sellha")
-            windows = self.driver.window_handles
-            self.driver.switch_to.window(windows[3])
-            self.pageNavigator('https://sellha.kr/')
-            best_keywords = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_all_elements_located((By.XPATH, f'//div[@class="sc-dZKGDA erPsrf"]')))
-            for i in range(len(best_keywords)):
-                best_keyword_text = best_keywords[i].text
-                naver_keyword_list.append(best_keyword_text)
-                percent = int((i/len(best_keywords))*100)
-                print(f"\r [*] {percent}% complete..", end='')
-                if percent == 100:
-                    # Print a newline character at the end to move the cursor to the next line
-                    print()
+
+            ################ Original ########################
+            # # Append data from the naver data lab
+            # naver_datalab_url = 'https://datalab.naver.com/'
+            # self.pageNavigator(naver_datalab_url)
+            #     # Get data
+            #     # Select domain
+            # domain_dropdown = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div[1]/div[3]/div[1]/a')))
+            # naver_keyword_list = []
+            # print("[+] Daily sourcing start.: naver")
+            # for i in range(3,10): 
+            #     domain_dropdown.click()
+            #     time.sleep(3)
+            #     domain = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[3]/div[1]/ul/li[{i}]/a')))
+            #     domain.click()
+            #     # Get yesterday keyword data 1st ~ 10th
+            #     for j in range(10):
+            #         while True:
+            #             time.sleep(1)
+            #             try:
+            #                 keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[4]/div/div[1]/div/div/div[12]/div/div/ul/li[{j+1}]/a/span'))).text
+            #                 naver_keyword_list.append(keyword)
+            #                 break
+            #             except StaleElementReferenceException:
+            #                 print(f"Stale element Exception at domain {i}, index {j}")
+            #     percent = int(((i-2)/7)*100)
+            #     print(f"\r [*] {percent}% complete..", end='')
+            #     if percent == 100:
+            #         # Print a newline character at the end to move the cursor to the next line
+            #         print()
+            # print("[+] Daily sourcing start.: sellha")
+            # windows = self.driver.window_handles
+            # self.driver.switch_to.window(windows[3])
+            # self.pageNavigator('https://sellha.kr/')
+            # best_keywords = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_all_elements_located((By.XPATH, f'//div[@class="sc-dZKGDA erPsrf"]')))
+            # for i in range(len(best_keywords)):
+            #     best_keyword_text = best_keywords[i].text
+            #     naver_keyword_list.append(best_keyword_text)
+            #     percent = int((i/len(best_keywords))*100)
+            #     print(f"\r [*] {percent}% complete..", end='')
+            #     if percent == 100:
+            #         # Print a newline character at the end to move the cursor to the next line
+            #         print()
+            ################ Original ########################
+            naver_keyword_list = ['가구']
             naver_sourced_df = pd.DataFrame(naver_keyword_list, columns=['키워드'])
             naver_sourced_df = naver_sourced_df.drop_duplicates(subset=['키워드'])
             naver_sourced_df.to_csv('naverSourced.csv', encoding='utf-8-sig', index = False)
@@ -2012,7 +2016,8 @@ class Tool:
             rating_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li//dd[@class="total_start_num"]')))
             uploaded_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li/dl/dd/span[@class="sale_state"]')))
             prd_name_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li/dl/dt[@class="product_title"]')))
-            if rating_list[i].text == '신규' or rating_list[i].text == 'NaN' or uploaded_list[i].text == '판매신청완료' or prd_name_list[i].text == '온채널 테스트 상품':
+            # if rating_list[i].text == '신규' or rating_list[i].text == 'NaN' or uploaded_list[i].text == '판매신청완료' or prd_name_list[i].text == '온채널 테스트 상품':
+            if uploaded_list[i].text == '판매신청완료' or prd_name_list[i].text == '온채널 테스트 상품':
                 continue
             rating = float(rating_list[i].text)
             if rating > rate_lowering:
