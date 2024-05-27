@@ -1636,6 +1636,37 @@ class Tool:
             out_of_stock_prd_temp_string = "Empty"
         return out_of_stock_prd_string, out_of_stock_prd_temp_string
     
+    def out_of_stock_checker2(self):
+        out_of_stock_list = []
+        time.sleep(0.5)
+        while True:
+            try:
+                checkboxes = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@class="chkbox_list"]/..')))
+            except:
+                try:
+                    is_prd_none = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, '//td[@class="prd_li_none"]')))
+                    print("[+] Out of stock 2 handling finish.")
+                    if len(out_of_stock_list) == 0:
+                        print("[+] Out of stock products(2) no exist.")
+                    out_of_stock_list_set = set(out_of_stock_list)
+                    out_of_stock_list = list(out_of_stock_list_set)
+                    return out_of_stock_list
+                except Exception as e:
+                    print(e)
+            for j in range(len(checkboxes)):
+                checkbox = checkboxes[j]
+                checked_text = checkbox.text
+                out_of_stock_list.append(checked_text)
+            # Delete checked items
+            select_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//input[@onclick="checkAll(this.checked)"]')))
+            time.sleep(0.5)
+            select_all_btn.click()
+            delete_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//button[@class="prd_del_btn"]')))
+            time.sleep(0.5)
+            delete_all_btn.click()
+            self.popupHandler(5, 'onchan')
+            time.sleep(3)
+            
     def delete_suspend_confirmator(self, store_name, delete_suspend_btn):
     # Check user confirmation before proceeding
         user_response = messagebox.askyesno("Confirmation", "Proceed?")

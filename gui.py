@@ -25,6 +25,7 @@ coupang_url = 'https://xauth.coupang.com/auth/realms/seller/protocol/openid-conn
 coupang_return_management_url = 'https://wing.coupang.com/tenants/sfl-portal/return-delivery/list'
 naver_datalab_url = "https://datalab.naver.com/"
 onchan_prd_stat_url = "https://www.onch3.co.kr/admin_mem_clo_list_2.php?ost=&sec=&ol=&npage="
+onchan_prd_stat_url2 = "https://www.onch3.co.kr/admin_mem_sold_list.html"
 onchan_order_stat_coupang_url = "https://www.onch3.co.kr/admin_api_order.html?api_name=coupang"
 onchan_order_stat_smart_url = "https://www.onch3.co.kr/admin_api_order.html?api_name=smartstore"
 onchan_prd_list_url = "https://www.onch3.co.kr/admin_mem_prd_list.html"
@@ -285,9 +286,15 @@ def prd_stat_checking_action():
                 out_of_stock_prd_list = out_of_stock_prd_string.split(',')
                 out_of_stock_prd_temp_list = out_of_stock_prd_temp_string.split(',')
                 out_of_stock_prd_list.extend(out_of_stock_prd_temp_list)
+                # Check out of stock from the other page in onchan.
+                EdgeSourcing.pageNavigator(onchan_prd_stat_url2)
+                out_of_stock_prd_list2 = EdgeTool.out_of_stock_checker2()
+                out_of_stock_prd_list.extend(out_of_stock_prd_list2)
                 unique_prd_name_list = [i for i in out_of_stock_prd_list if i != 'Empty']
                 message = f" [!] Stat Checking: {unique_prd_name_list}\n"
                 EdgeTool.append_to_text_widget(message, "red")
+                # Convert out_of Stock_prd_string to unique
+                out_of_stock_prd_string = ','.join(unique_prd_name_list)
                 checking_phase_done = True
             if out_of_stock_prd_string == 'Empty' and out_of_stock_prd_temp_string == 'Empty':
                  coupang_phase_done = True
