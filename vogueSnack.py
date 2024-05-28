@@ -228,6 +228,7 @@ class Sourcing:
             preprocessed_df.insert(preprocessed_df.columns.get_loc('키워드') + 1, '바꾼키워드', None)
             preprocessed_df.insert(preprocessed_df.columns.get_loc('바꾼키워드') + 1, 'isSearched', False)
             preprocessed_df.insert(preprocessed_df.columns.get_loc('isSearched') + 1, 'isEdited', False)
+            preprocessed_df.insert(preprocessed_df.columns.get_loc('isEdited') + 1, 'total_sended_num', 0)
         if not isDaily: # Not make the list when do the daily sourcing and uploading.
             print(f"There are number of {len(preprocessed_df)} items.")
             # Stack to keep history of DataFrame states
@@ -637,7 +638,12 @@ class Uploading:
             df_discount.to_csv("smart_discount_rate_daily.csv", encoding='utf-8-sig' , index = False)
         sendBtn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f"//button[contains(@class, '{store_name}_modi_btn')]")))
         sendBtn.click()
-        self.tool.popupHandler(200, store_name)
+        # Get Sended Items number
+
+        alert_text = self.tool.popupHandler(200, store_name)
+        match = re.search(r"성공:\s*(\d+)", alert_text)
+        sending_success_num = match.group(1)
+        return sending_success_num
         # print("[+] Sending to store end." )
 
     def keywordCompare(self, preprocessed_df, net_profit_ratio, min_rating, prd_max_num, isDaily, discount_rate_calculation, isDeliveryCharge_coupang, isDeliveryCharge_smart, is_margin_descend):
@@ -664,12 +670,12 @@ class Uploading:
         while True:
             try:
                 for i in range(len(targetList)):
+                    total_sended_num = preprocessed_df['total_sended_num'].iloc[i]
                     target = targetList[i]
                     originalTarget = originalList[i]
                     if isDaily:
                         target = originalTarget
                     isSearched = preprocessed_df['isSearched'].iloc[i]
-
                     while not isSearched:
                         # Perform Search
                         searchTextbox = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="prd_sear_txt"]')))
@@ -684,66 +690,89 @@ class Uploading:
                         search_btn.click()
                         # print("[+] search button clicked successfully")
                         time.sleep(3)
-                        
-                        # Check for the existion of products
-                        try:
-                            self.driver.find_element(By.CLASS_NAME, 'product_set')
-                            # print("[+] Exist. Uploading start.")
-                            checkboxes = self.driver.find_elements(By.CLASS_NAME, "checkbox_label")
-                            checkboxes_numb = len(checkboxes)
-                            if checkboxes_numb < 5:
-                                # Automatic checker
-                                try:
-                                    checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(min_rating, prd_max_num, is_margin_descend)
-                                except Exception as e:
-                                    print(e)
-                                if checked_prd_num == 0:
-                                    # print("[+] Sending to Store passed.")
-                                    preprocessed_df.loc[i, 'isSearched'] = True
-                                    preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
-                                    preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
-                                    break
-
+                        prd_view_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]')))
+                        prd_view_btn.click()
+                        view_200_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]/ul/li[3]')))
+                        view_200_btn.click()
+                        time.sleep(2)
+                        while total_sended_num <= prd_max_num:   
+                            # Check for the existion of products
+                            try:
+                                self.driver.find_element(By.CLASS_NAME, 'product_set')
+                                # print("[+] Exist. Uploading start.")
+                                checkboxes = self.driver.find_elements(By.CLASS_NAME, "checkbox_label")
+                                checkboxes_numb = len(checkboxes)
+                                
+                                if checkboxes_numb < 5:
+                                    # Automatic checker
+                                    try:
+                                        checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(min_rating, prd_max_num, is_margin_descend, 200000) # Set minimum price to 200,000
+                                    except Exception as e:
+                                        print(e)
+                                    if checked_prd_num == 0:
+                                        # print("[+] Sending to Store passed.")
+                                        
+                                        
+                                        preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
+                                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                                        preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
+                                        break
+                                    else:
+                                        smt_btn_path = "//div[@onclick='smartstore_download()']"
+                                        # Coupang and Smart restrict the number of items, I stopped sending like below.
+                                        sending_success_num_coupang = self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
+                                        sending_success_num_smart = self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
+                                        sending_success_num = max(sending_success_num_coupang, sending_success_num_smart)
+                                        total_sended_num += sending_success_num
+                                        
+                                        preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
+                                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                                        preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
+                                        break
                                 else:
-                                    smt_btn_path = "//div[@onclick='smartstore_download()']"
-                                    # Coupang and Smart restrict the number of items, I stopped sending like below.
-                                    self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
-                                    self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
-                                    preprocessed_df.loc[i, 'isSearched'] = True
-                                    preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
-                                    preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
-                                    break
-                            else:
-                                # Automatic checker
-                                try:
-                                    checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(min_rating, prd_max_num, is_margin_descend)
-                                except Exception as e:
-                                    print(e)
-                                if checked_prd_num == 0:
-                                    # print(f"Current item number info: ({i+1}/{len(targetList)})")
-                                    # print(" [*] Sending to Store passed.")
-                                    preprocessed_df.loc[i, 'isSearched'] = True
-                                    preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
-                                    preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
-                                    break
-                                else:
-                                    smt_btn_path = "//div[@onclick='smartstore_download()']"
-                                    coup_btn_path = "/html/body/div[3]/section/div/div[1]/div[4]"
-                                    # print(f"Current item number info: ({i+1}/{len(targetList)})")
-                                    self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
-                                    self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
-                                    preprocessed_df.loc[i, 'isSearched'] = True
-                                    preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
-                                    preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
-                                    break
-
-                        except NoSuchElementException:
-                            # print(f"Current item number info: ({i+1}/{len(targetList)})")
-                            # print(" [*] Not exist")
-                            preprocessed_df.loc[i, 'isSearched'] = True
-                            preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
-                            preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
-                            break
+                                    # Automatic checker
+                                    try:
+                                        checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(min_rating, prd_max_num, is_margin_descend, 200000) # Set minimum price to 200,000
+                                    except Exception as e:
+                                        print(e)
+                                    if checked_prd_num == 0:
+                                        # print(f"Current item number info: ({i+1}/{len(targetList)})")
+                                        # print(" [*] Sending to Store passed.")
+                                        
+                                        
+                                        preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
+                                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                                        preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
+                                        break
+                                    else: 
+                                        smt_btn_path = "//div[@onclick='smartstore_download()']"
+                                        coup_btn_path = "/html/body/div[3]/section/div/div[1]/div[4]"
+                                        # print(f"Current item number info: ({i+1}/{len(targetList)})")
+                                        sending_success_num_coupang = self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
+                                        sending_success_num_smart = self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
+                                        sending_success_num = max(sending_success_num_coupang, sending_success_num_smart)
+                                        total_sended_num += sending_success_num
+                                        
+                                        preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
+                                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                                        preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)      
+                            except NoSuchElementException:
+                                # print(f"Current item number info: ({i+1}/{len(targetList)})")
+                                # print(" [*] Not exist")
+                                preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
+                                preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                                preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
+                                break
+                            try:
+                                next_page_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//a[@ref="next"]')))
+                                next_page_btn.click()
+                                time.sleep(3)
+                            except NoSuchElementException:
+                                break
+                        preprocessed_df.loc[i, 'isSearched'] = True
+                        preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
+                        preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
+                        isSearched = True
                     percent = int(((i+1)/int(len(targetList)))*100)
                     print(f"\r [*] {percent}% complete..", end='')
                     if percent == 100:
@@ -2030,7 +2059,7 @@ class Tool:
                 # print(f"[+] Delivery charge chaning process in {storename}. isDeliveryCharge = {isDeliveryCharge} end.")
     
     # Automate checking above the setted rate.
-    def product_checker(self, rate_lowering, max_num, is_margin_descend):
+    def product_checker(self, rate_lowering, max_num, is_margin_descend, minimum_price):
         counter = 0
         max_delivery_charge_list = []
         lowest_delivery_charge_list = []
@@ -2038,19 +2067,28 @@ class Tool:
             # Set order of descending with margin
             margin_descend_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="search_filter"]/tbody/tr/td[6]/div/a')))
             margin_descend_btn.click()
-        prd_view_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]')))
-        prd_view_btn.click()
-        view_200_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]/ul/li[3]')))
-        view_200_btn.click()
+        # prd_view_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]')))
+        # prd_view_btn.click()
+        # view_200_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]/ul/li[3]')))
+        # view_200_btn.click()
         rating_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li//dd[@class="total_start_num"]')))
+        uploaded_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li/dl/dd/span[@class="sale_state"]')))
+        prd_name_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li/dl/dt[@class="product_title"]')))
+        price_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//span[@class="price"]')))
         for i in range(len(rating_list)):
             rating_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li//dd[@class="total_start_num"]')))
             uploaded_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li/dl/dd/span[@class="sale_state"]')))
             prd_name_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//*[@id="prd_form"]/ul/li/dl/dt[@class="product_title"]')))
+            price_list = WebDriverWait(self.driver, 30).until(EC.presence_of_all_elements_located((By.XPATH, '//span[@class="price"]')))
             # if rating_list[i].text == '신규' or rating_list[i].text == 'NaN' or uploaded_list[i].text == '판매신청완료' or prd_name_list[i].text == '온채널 테스트 상품':
             if uploaded_list[i].text == '판매신청완료' or prd_name_list[i].text == '온채널 테스트 상품':
                 continue
-            rating = float(rating_list[i].text)
+            if rating_list[i].text == '신규' or rating_list[i].text == 'NaN':
+                rating = 5
+            else:
+                rating = float(rating_list[i].text)
+            if int(price_list[i].text.replace(',','')) < minimum_price:
+                continue
             if rating > rate_lowering:
                 prd_image = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="prd_form"]/ul/li[{i + 1}]/dl/dd[2]/a/img')))
                 self.driver.set_page_load_timeout(10)
@@ -2070,7 +2108,7 @@ class Tool:
                     price_autonomy_detail_text = price_autonomy_detail.text
                     prd_price = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div/section/div/div/div/div/div[@class="prod_cus_price"]')))
                     prd_price_text = prd_price.text.strip().replace('원','')
-                if not is_adult and price_autonomy_detail_text == "가격자율" and prd_price_text != "0":
+                if not is_adult and price_autonomy_detail_text == "가격자율" and int(prd_price_text.replace(',','')) != 0:
                     # Get delevery charge(lower, max)
                     delivery_fee_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[4]/ul/li[1]/div[2]')))
                     delivery_fee_detail_text = delivery_fee_detail.text

@@ -60,7 +60,7 @@ def set_default_text():
     coupang_pw_entry.insert(0,"9w_kPvtu8Qcj93p")
     net_profit_ratio_entry.insert(0, "5")
     min_rating_entry.insert(0, "3.5")
-    prd_max_num_entry.insert(0, "200")
+    prd_max_num_entry.insert(0, "10")
     min_searched_num_entry.insert(0, "10000")
     sourcing_size_entry.insert(0, "150")
 
@@ -296,7 +296,7 @@ def prd_stat_checking_action():
                 # Convert out_of Stock_prd_string to unique
                 out_of_stock_prd_string = ','.join(unique_prd_name_list)
                 checking_phase_done = True
-            if out_of_stock_prd_string == 'Empty' and out_of_stock_prd_temp_string == 'Empty':
+            if len(out_of_stock_prd_string) == 0:
                  coupang_phase_done = True
                  smart_phase_done = True
                  all_phase_done = True
