@@ -641,10 +641,14 @@ class Uploading:
         # Get Sended Items number
 
         alert_text = self.tool.popupHandler(200, store_name)
-        match = re.search(r"성공:\s*(\d+)", alert_text)
-        sending_success_num = match.group(1)
-        return sending_success_num
-        # print("[+] Sending to store end." )
+        try:
+            match = re.search(r"성공\s*:\s*(\d+)", alert_text)
+            sending_success_num_text = match.group(1)
+            sending_success_num_int = int(sending_success_num_text)
+        except Exception as e:
+            print(e)
+        return sending_success_num_int
+        # print("[+] Sending to store end.")
 
     def keywordCompare(self, preprocessed_df, net_profit_ratio, min_rating, prd_max_num, isDaily, discount_rate_calculation, isDeliveryCharge_coupang, isDeliveryCharge_smart, is_margin_descend):
         print("[+] Uploading process start.")
@@ -769,12 +773,17 @@ class Uploading:
                                 time.sleep(3)
                             except NoSuchElementException:
                                 break
+                            percent = int(((total_sended_num)/prd_max_num)*100)
+                            print(f"\r [*] Number of target items: {percent}% complete..", end='')
+                            if percent >= 100:
+                                # Print a newline character at the end to move the cursor to the next line
+                                print()
                         preprocessed_df.loc[i, 'isSearched'] = True
                         preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                         preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
                         isSearched = True
                     percent = int(((i+1)/int(len(targetList)))*100)
-                    print(f"\r [*] {percent}% complete..", end='')
+                    print(f"\r [*] Target uploading: {percent}% complete..", end='')
                     if percent == 100:
                         # Print a newline character at the end to move the cursor to the next line
                         print()
