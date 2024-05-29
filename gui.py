@@ -33,6 +33,7 @@ onchan_smart_prd_managenemt_url = "https://www.onch3.co.kr/admin_smart_manage.ht
 onchan_coupang_prd_managenemt_url = "https://www.onch3.co.kr/admin_coupang_manage.html"
 onchan_my_prd_list_url = "https://www.onch3.co.kr/admin_mem_prd.html"
 coupang_prd_list_url = "https://wing.coupang.com/vendor-inventory/list?searchIds=&startTime=2000-01-01&endTime=2099-12-31&productName=&brandName=&manufacturerName=&productType=&autoPricingStatus=ALL&dateType=productRegistrationDate&dateRangeShowStyle=true&dateRange=all&saleEndDatePeriodType=&includeUsedProduct=&deleteType=false&deliveryMethod=&shippingType=&shipping=&otherType=&productStatus=SAVED,WAIT_FOR_SALE,VALID,SOLD_OUT,INVALID,END_FOR_SALE,APPROVING,IN_REVIEW,DENIED,PARTIAL_APPROVED,APPROVED,ALL&advanceConditionShow=false&displayCategoryCodes=&currentMenuCode=&rocketMerchantVersion=&registrationType=&upBundling=ALL&hasUpBundlingItem=&hasBadImage=false&page=1&countPerPage=50&sortField=vendorInventoryId&desc=true&fromListV2=true&locale=ko_KR&vendorItemViolationType=&coupangAttributeOptimized=FALSE&autoPricingActive="
+coupang_prd_catalog_url = "https://wing.coupang.com/tenants/seller-web/post-matching/page/inventory-list"
 smart_prd_list_url = "https://sell.smartstore.naver.com/#/products/origin-list"
 
 loginbtn1 = '.sc-iAEyYk.loQZmZ'
