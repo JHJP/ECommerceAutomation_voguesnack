@@ -36,7 +36,7 @@ coupang_prd_list_url = "https://wing.coupang.com/vendor-inventory/list?searchIds
 smart_prd_list_url = "https://sell.smartstore.naver.com/#/products/origin-list"
 
 loginbtn1 = '.sc-iAEyYk.loQZmZ'
-onchan_login_btn = '.btn.btn-lg.btn-primary.btn-block'
+onchan_login_btn = '//button[@name = "login"]'
 smart_login_btn = 'ul.panel_wrap li.panel_item .panel_inner .btn_login_wrap .btn_login'
 coupang_loginbtn = '.cp-loginpage__form__submit'
 
@@ -52,8 +52,8 @@ def set_default_text():
     # Set default text
     id_entry.insert(0, "papagogo041@gmail.com")
     password_entry.insert(0, "9Hy:Snc9nqH8.9F")
-    id2_entry.insert(0, "onchan")
-    password2_entry.insert(0, "T-vtXPDK6qBerh!")
+    id2_entry.insert(0, "voguesnack@naver.com")
+    password2_entry.insert(0, "z+kx#h%_aQo]{q7")
     smart_id_entry.insert(0,"voguesnack")
     smart_pw_entry.insert(0,"rq3.XW.NzXuaCc8")
     coupang_id_entry.insert(0,"voguesnack")
