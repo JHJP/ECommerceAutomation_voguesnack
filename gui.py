@@ -63,6 +63,7 @@ def set_default_text():
     prd_max_num_entry.insert(0, "10")
     min_searched_num_entry.insert(0, "10000")
     sourcing_size_entry.insert(0, "150")
+    prd_min_price_entry.insert(0, "15000")
 
 def initialize_webdriver():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
@@ -148,7 +149,8 @@ def uploading_action():
     net_profit_ratio = int(net_profit_ratio_var.get())
     onchan_id = id2_var.get()
     onchan_pw = password2_var.get()
-
+    min_price = int(prd_min_price_var.get())
+    
     # login checking
     isLoggedin_onchan, isLoggedin_coupang = EdgeTool.login_checker(window_onchan, url3, window_coupang, coupang_url)
 
@@ -160,7 +162,7 @@ def uploading_action():
                     EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
                 EdgeTool.popupHandler(3, 'onchan')
                 preprocesedSourced_df = pd.read_csv('preprocesedSourced.csv', encoding='utf-8-sig')
-                EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, min_rating, prd_max_num, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=margin_descend_var.get() == "True")
+                EdgeUploading.keywordCompare(preprocesedSourced_df, net_profit_ratio, min_rating, prd_max_num, min_price, isDaily=False, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=margin_descend_var.get() == "True")
                 break
             except ElementClickInterceptedException:
                     message = "[!] Element intercepted while uploading.\n"
@@ -192,6 +194,7 @@ def daily_sourcing_uploading_action():
     net_profit_ratio = int(net_profit_ratio_var.get())
     min_rating = float(min_rating_var.get())
     prd_max_num = int(prd_max_num_var.get())
+    min_price = int(prd_min_price_var.get())
     # login checking
     isLoggedin_onchan, isLoggedin_coupang = EdgeTool.login_checker(window_onchan, url3, window_coupang, coupang_url)
     if not isLoggedin_onchan:
@@ -210,7 +213,7 @@ def daily_sourcing_uploading_action():
                 naver_sourced_df = EdgeSourcing.daily_sourcing(base_path)
                 naver_sourced_isEdited_df = EdgeSourcing.targetListMaker(naver_sourced_df, isDaily=True)
                 driver.switch_to.window(window_onchan)
-                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, min_rating, prd_max_num, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=margin_descend_var.get() == "True")
+                EdgeUploading.keywordCompare(naver_sourced_isEdited_df, net_profit_ratio, min_rating, prd_max_num, min_price, isDaily=True, discount_rate_calculation=False, isDeliveryCharge_coupang=delivery_charge_var_coupang.get() == "True", isDeliveryCharge_smart=delivery_charge_var_smart.get() == "True", is_margin_descend=margin_descend_var.get() == "True")
                 driver.switch_to.window(window_coupang)
                 EdgeTool.delivery_charge_changer('coupang', coupang_prd_list_url, isDeliveryCharge=delivery_charge_var_coupang.get() == "True")
                 naver_duplicate_handling_action()
@@ -633,6 +636,7 @@ min_rating_var = tk.StringVar()
 prd_max_num_var = tk.StringVar()
 min_searched_num_var = tk.StringVar()
 sourcing_size_var = tk.StringVar()
+prd_min_price_var = tk.StringVar()
 delivery_charge_var_coupang = tk.StringVar(value="False")
 delivery_charge_var_smart = tk.StringVar(value="True")
 margin_descend_var = tk.StringVar(value="False")
@@ -654,6 +658,7 @@ frame13 = tk.Frame(root)
 frame14 = tk.Frame(root)
 frame15 = tk.Frame(root)
 frame16 = tk.Frame(root)
+frame17 = tk.Frame(root)
 
 # Create Labels
 label_id = tk.Label(frame1, text="Sellha ID")
@@ -672,6 +677,7 @@ label_delivery_charge_dropdown_smart = tk.Label(frame13, text="Smart Delivery ch
 label_margin_descend_dropdown = tk.Label(frame14, text="Sort by highest margin")
 label_min_searched_num = tk.Label(frame15, text="Minimum searched number")
 label_sourcing_size = tk.Label(frame16, text="Sourcing size")
+label_prd_min_price = tk.Label(frame17, text="Minimum product price")
 
 # Create Entries
 id_entry = tk.Entry(frame1, textvariable=id_var)
@@ -687,6 +693,7 @@ min_rating_entry = tk.Entry(frame10, textvariable=min_rating_var)
 prd_max_num_entry = tk.Entry(frame11, textvariable=prd_max_num_var)
 min_searched_num_entry = tk.Entry(frame15, textvariable=min_searched_num_var)
 sourcing_size_entry = tk.Entry(frame16, textvariable=sourcing_size_var)
+prd_min_price_entry = tk.Entry(frame17, textvariable=prd_min_price_var)
 
 # Create Drop downs
 delivery_charge_dropdown_coupang = ttk.Combobox(frame12, textvariable=delivery_charge_var_coupang, values=["True", "False"])
@@ -720,6 +727,8 @@ label_min_searched_num.pack(side=tk.LEFT)
 min_searched_num_entry.pack(side=tk.RIGHT)
 label_sourcing_size.pack(side=tk.LEFT)
 sourcing_size_entry.pack(side=tk.RIGHT)
+label_prd_min_price.pack(side=tk.LEFT)
+prd_min_price_entry.pack(side=tk.RIGHT)
 label_delivery_charge_dropdown_coupang.pack(side=tk.LEFT)
 delivery_charge_dropdown_coupang.pack(side=tk.RIGHT)
 label_delivery_charge_dropdown_smart.pack(side=tk.LEFT)
@@ -744,6 +753,7 @@ frame13.pack()
 frame14.pack()
 frame15.pack()
 frame16.pack()
+frame17.pack()
 
 # Create buttons for Sourcing and Uploading
 sourcing_btn = tk.Button(root, text="Monthly Sourcing", command=sourcing_action)
