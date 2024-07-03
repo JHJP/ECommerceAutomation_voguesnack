@@ -33,6 +33,7 @@ onchan_smart_prd_managenemt_url = "https://www.onch3.co.kr/admin_smart_manage.ht
 onchan_coupang_prd_managenemt_url = "https://www.onch3.co.kr/admin_coupang_manage.html"
 onchan_my_prd_list_url = "https://www.onch3.co.kr/admin_mem_prd.html"
 coupang_prd_list_url = "https://wing.coupang.com/vendor-inventory/list?searchIds=&startTime=2000-01-01&endTime=2099-12-31&productName=&brandName=&manufacturerName=&productType=&autoPricingStatus=ALL&dateType=productRegistrationDate&dateRangeShowStyle=true&dateRange=all&saleEndDatePeriodType=&includeUsedProduct=&deleteType=false&deliveryMethod=&shippingType=&shipping=&otherType=&productStatus=SAVED,WAIT_FOR_SALE,VALID,SOLD_OUT,INVALID,END_FOR_SALE,APPROVING,IN_REVIEW,DENIED,PARTIAL_APPROVED,APPROVED,ALL&advanceConditionShow=false&displayCategoryCodes=&currentMenuCode=&rocketMerchantVersion=&registrationType=&upBundling=ALL&hasUpBundlingItem=&hasBadImage=false&page=1&countPerPage=50&sortField=vendorInventoryId&desc=true&fromListV2=true&locale=ko_KR&vendorItemViolationType=&coupangAttributeOptimized=FALSE&autoPricingActive="
+coupang_catalog_matching_url = "https://wing.coupang.com/tenants/seller-web/post-matching/page/inventory-list"
 smart_prd_list_url = "https://sell.smartstore.naver.com/#/products/origin-list"
 
 loginbtn1 = '.sc-iAEyYk.loQZmZ'
@@ -617,6 +618,32 @@ def out_of_stock_finisher_action():
     driver.switch_to.window(window_onchan)
     EdgeSourcing.pageNavigator(onchan_prd_stat_url)
     EdgeTool.out_of_stock_finisher()
+
+def catalog_matching_action():
+    # login checking
+    isLoggedin_onchan, isLoggedin_coupang = EdgeTool.login_checker(window_onchan, url3, window_coupang, coupang_url)
+    if not isLoggedin_onchan:
+        onchan_id = id2_var.get()
+        onchan_pw = password2_var.get()
+        driver.switch_to.window(window_onchan)
+        EdgeSourcing.login('onchan',url3,onchan_id,onchan_pw,'username','password',onchan_login_btn, False)
+    if not isLoggedin_coupang:
+        coupang_id = coupang_id_var.get()
+        coupang_pw = coupang_pw_var.get()
+        driver.switch_to.window(window_coupang)
+        EdgeSourcing.login('coupang',coupang_url, coupang_id, coupang_pw, 'username', 'password', coupang_loginbtn, authPhase=False)
+    while True:
+            try:
+                driver.switch_to.window(window_coupang)
+                EdgeSourcing.pageNavigator(coupang_catalog_matching_url)
+                miss_matched_prd_list = EdgeTool.miss_match_checker()
+                break
+            except ElementClickInterceptedException:
+                    message = "[!] Element intercepted while daily.\n"
+                    EdgeTool.append_to_text_widget(message, "red")
+                    EdgeTool.scroll_downer(250)
+                    message = "[*] Element intercepted fixed while daily.\n"
+                    EdgeTool.append_to_text_widget(message, "blue")
 # Initialize the main window
 root = tk.Tk()
 root.title("Automation Tool")

@@ -797,6 +797,33 @@ class Tool:
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
 
+    def miss_match_checker(self):
+        print(" [*] miss matched product detection start.")
+        miss_matched_id_list = []
+        drop_downs = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//*[@id='wing-top-body']/div/div[5]/div[1]/div[2]/div/div/div/table/tbody/tr/td/i[@class='wing-web-component inherit-color']")))
+        vendor_inventory_ids = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//*[@id='wing-top-body']/div/div/div/div/div/div/div/table/tbody/tr/td[2]")))
+        while True:
+            for i in range(len(drop_downs)):
+                prd_id_list = []
+                drop_down = drop_downs[i]
+                drop_down.click()
+                time.sleep(1)
+                prd_ids = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//*[@id='wing-top-body']/div/div/div/div/div/div/div/table/tbody/tr/td/div/div/div/div/div/table/tbody/tr/td[1]/a")))
+                for j in range(len(prd_ids)):
+                    prd_id = prd_ids[j]
+                    prd_id_list.append(prd_id.text)
+                if len(set(prd_id_list)) != 1:
+                    vendor_inventory_id = vendor_inventory_ids[i].text
+                    miss_matched_id_list.append(vendor_inventory_id)
+                drop_down.click()
+                time.sleep(1)
+            try:
+                next_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//span[@data-wuic-partial='next']/a")))
+            except Exception:
+                break
+        print(" [*] miss matched product detection end.")
+        return miss_matched_id_list
+
     def outdated_prd_deleter(self, del_num, store_name):
         print("[+] outdated product deletion start.")
         # Pass if the product sold in past 30 days
