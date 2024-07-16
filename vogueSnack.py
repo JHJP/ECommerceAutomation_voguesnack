@@ -40,7 +40,10 @@ class Sourcing:
                 self.driver.get(url)
         self.driver.find_element(By.NAME, usernameBox).send_keys(id)
         self.driver.find_element(By.NAME, passwordBox).send_keys(password)
-        self.driver.find_element(By.CSS_SELECTOR, loginbtn).click() # use CSS_SELECTOR to change class name format. Because there are spaces on class name, which means not a single class.
+        try:
+            self.driver.find_element(By.CSS_SELECTOR, loginbtn).click() # use CSS_SELECTOR to change class name format. Because there are spaces on class name, which means not a single class.
+        except:
+            self.driver.find_element(By.XPATH, loginbtn).click()
         while True:
             try:# wait the ready state to be complete
                 WebDriverWait(driver=self.driver, timeout=10).until(
@@ -349,49 +352,49 @@ class Sourcing:
         if not matching_files:
 
             ################ Original ########################
-            # # Append data from the naver data lab
-            # naver_datalab_url = 'https://datalab.naver.com/'
-            # self.pageNavigator(naver_datalab_url)
-            #     # Get data
-            #     # Select domain
-            # domain_dropdown = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div[1]/div[3]/div[1]/a')))
-            # naver_keyword_list = []
-            # print("[+] Daily sourcing start.: naver")
-            # for i in range(3,10): 
-            #     domain_dropdown.click()
-            #     time.sleep(3)
-            #     domain = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[3]/div[1]/ul/li[{i}]/a')))
-            #     domain.click()
-            #     # Get yesterday keyword data 1st ~ 10th
-            #     for j in range(10):
-            #         while True:
-            #             time.sleep(1)
-            #             try:
-            #                 keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[4]/div/div[1]/div/div/div[12]/div/div/ul/li[{j+1}]/a/span'))).text
-            #                 naver_keyword_list.append(keyword)
-            #                 break
-            #             except StaleElementReferenceException:
-            #                 print(f"Stale element Exception at domain {i}, index {j}")
-            #     percent = int(((i-2)/7)*100)
-            #     print(f"\r [*] {percent}% complete..", end='')
-            #     if percent == 100:
-            #         # Print a newline character at the end to move the cursor to the next line
-            #         print()
-            # print("[+] Daily sourcing start.: sellha")
-            # windows = self.driver.window_handles
-            # self.driver.switch_to.window(windows[3])
-            # self.pageNavigator('https://sellha.kr/')
-            # best_keywords = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_all_elements_located((By.XPATH, f'//div[@class="sc-dZKGDA erPsrf"]')))
-            # for i in range(len(best_keywords)):
-            #     best_keyword_text = best_keywords[i].text
-            #     naver_keyword_list.append(best_keyword_text)
-            #     percent = int((i/len(best_keywords))*100)
-            #     print(f"\r [*] {percent}% complete..", end='')
-            #     if percent == 100:
-            #         # Print a newline character at the end to move the cursor to the next line
-            #         print()
+            # Append data from the naver data lab
+            naver_datalab_url = 'https://datalab.naver.com/'
+            self.pageNavigator(naver_datalab_url)
+                # Get data
+                # Select domain
+            domain_dropdown = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div[1]/div[3]/div[1]/a')))
+            naver_keyword_list = []
+            print("[+] Daily sourcing start.: naver")
+            for i in range(3,10): 
+                domain_dropdown.click()
+                time.sleep(3)
+                domain = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[3]/div[1]/ul/li[{i}]/a')))
+                domain.click()
+                # Get yesterday keyword data 1st ~ 10th
+                for j in range(10):
+                    while True:
+                        time.sleep(1)
+                        try:
+                            keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[4]/div/div[1]/div/div/div[12]/div/div/ul/li[{j+1}]/a/span'))).text
+                            naver_keyword_list.append(keyword)
+                            break
+                        except StaleElementReferenceException:
+                            print(f"Stale element Exception at domain {i}, index {j}")
+                percent = int(((i-2)/7)*100)
+                print(f"\r [*] {percent}% complete..", end='')
+                if percent == 100:
+                    # Print a newline character at the end to move the cursor to the next line
+                    print()
+            print("[+] Daily sourcing start.: sellha")
+            windows = self.driver.window_handles
+            self.driver.switch_to.window(windows[3])
+            self.pageNavigator('https://sellha.kr/')
+            best_keywords = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_all_elements_located((By.XPATH, f'//div[@class="sc-cSnNnL jpuXNa"]')))
+            for i in range(len(best_keywords)):
+                best_keyword_text = best_keywords[i].text
+                naver_keyword_list.append(best_keyword_text)
+                percent = int((i/len(best_keywords))*100)
+                print(f"\r [*] {percent}% complete..", end='')
+                if percent == 100:
+                    # Print a newline character at the end to move the cursor to the next line
+                    print()
             ################ Original ########################
-            naver_keyword_list = ['가구']
+            # naver_keyword_list = ['가구']
             naver_sourced_df = pd.DataFrame(naver_keyword_list, columns=['키워드'])
             naver_sourced_df = naver_sourced_df.drop_duplicates(subset=['키워드'])
             naver_sourced_df.to_csv('naverSourced.csv', encoding='utf-8-sig', index = False)
@@ -650,7 +653,7 @@ class Uploading:
         return sending_success_num_int
         # print("[+] Sending to store end.")
 
-    def keywordCompare(self, preprocessed_df, net_profit_ratio, min_rating, prd_max_num, isDaily, discount_rate_calculation, isDeliveryCharge_coupang, isDeliveryCharge_smart, is_margin_descend):
+    def keywordCompare(self, preprocessed_df, net_profit_ratio, min_rating, prd_max_num, min_price, isDaily, discount_rate_calculation, isDeliveryCharge_coupang, isDeliveryCharge_smart, is_margin_descend):
         print("[+] Uploading process start.")
         if not isDaily:
             csv_name = 'preprocesedSourcedUpdated.csv'
@@ -694,9 +697,9 @@ class Uploading:
                         search_btn.click()
                         # print("[+] search button clicked successfully")
                         time.sleep(3)
-                        prd_view_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]')))
+                        prd_view_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//div[@class="pgn_view_cnt"]')))
                         prd_view_btn.click()
-                        view_200_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[3]/section/div/div[1]/div[5]/ul/li[3]')))
+                        view_200_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//li[@value="200"]')))
                         view_200_btn.click()
                         time.sleep(2)
                         while total_sended_num <= prd_max_num:   
@@ -710,59 +713,51 @@ class Uploading:
                                 if checkboxes_numb < 5:
                                     # Automatic checker
                                     try:
-                                        checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(min_rating, prd_max_num, is_margin_descend, 200000) # Set minimum price to 200,000
+                                        checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(min_rating, prd_max_num, is_margin_descend, min_price) # Set minimum price to 200,000
                                     except Exception as e:
                                         print(e)
                                     if checked_prd_num == 0:
                                         # print("[+] Sending to Store passed.")
-                                        
-                                        
                                         preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
                                         preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                                         preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
-                                        break
                                     else:
                                         smt_btn_path = "//div[@onclick='smartstore_download()']"
                                         # Coupang and Smart restrict the number of items, I stopped sending like below.
                                         sending_success_num_coupang = self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
                                         sending_success_num_smart = self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
-                                        sending_success_num = max(sending_success_num_coupang, sending_success_num_smart)
+                                        sending_success_num = min(sending_success_num_coupang, sending_success_num_smart)
                                         total_sended_num += sending_success_num
-                                        
                                         preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
                                         preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                                         preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
-                                        break
                                 else:
                                     # Automatic checker
                                     try:
-                                        checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(min_rating, prd_max_num, is_margin_descend, 200000) # Set minimum price to 200,000
+                                        checked_prd_num, max_delivery_charge_list, lowest_delivery_charge_list = self.tool.product_checker(min_rating, prd_max_num, is_margin_descend, min_price) # Set minimum price to 200,000
                                     except Exception as e:
                                         print(e)
                                     if checked_prd_num == 0:
                                         # print(f"Current item number info: ({i+1}/{len(targetList)})")
                                         # print(" [*] Sending to Store passed.")
-                                        
-                                        
                                         preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
                                         preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                                         preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
-                                        break
                                     else: 
                                         smt_btn_path = "//div[@onclick='smartstore_download()']"
-                                        coup_btn_path = "/html/body/div[3]/section/div/div[1]/div[4]"
+                                        coup_btn_path = "//div[@onclick='coupang_download()']"
                                         # print(f"Current item number info: ({i+1}/{len(targetList)})")
                                         sending_success_num_coupang = self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
                                         sending_success_num_smart = self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
-                                        sending_success_num = max(sending_success_num_coupang, sending_success_num_smart)
+                                        sending_success_num = min(sending_success_num_coupang, sending_success_num_smart)
                                         total_sended_num += sending_success_num
-                                        
                                         preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
                                         preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                                         preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)      
-                            except NoSuchElementException:
+                            except Exception as e:
                                 # print(f"Current item number info: ({i+1}/{len(targetList)})")
                                 # print(" [*] Not exist")
+                                print(f" [!] Exception occur during finding product sets: {e}")
                                 preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
                                 preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                                 preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
@@ -771,7 +766,8 @@ class Uploading:
                                 next_page_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//a[@ref="next"]')))
                                 next_page_btn.click()
                                 time.sleep(3)
-                            except NoSuchElementException:
+                            except Exception as e:
+                                print(f" [!] Exception occur during next page button: {e}")
                                 break
                             percent = int(((total_sended_num)/prd_max_num)*100)
                             print(f"\r [*] Number of target items: {percent}% complete..", end='')
@@ -800,6 +796,33 @@ class Tool:
         self.sourcing = sourcing or Sourcing(driver)
         # self.uploading = uploading
         self.uploading = uploading or Uploading(driver)
+
+    def miss_match_checker(self):
+        print(" [*] miss matched product detection start.")
+        miss_matched_id_list = []
+        drop_downs = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//*[@id='wing-top-body']/div/div[5]/div[1]/div[2]/div/div/div/table/tbody/tr/td/i[@class='wing-web-component inherit-color']")))
+        vendor_inventory_ids = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//*[@id='wing-top-body']/div/div/div/div/div/div/div/table/tbody/tr/td[2]")))
+        while True:
+            for i in range(len(drop_downs)):
+                prd_id_list = []
+                drop_down = drop_downs[i]
+                drop_down.click()
+                time.sleep(1)
+                prd_ids = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//*[@id='wing-top-body']/div/div/div/div/div/div/div/table/tbody/tr/td/div/div/div/div/div/table/tbody/tr/td[1]/a")))
+                for j in range(len(prd_ids)):
+                    prd_id = prd_ids[j]
+                    prd_id_list.append(prd_id.text)
+                if len(set(prd_id_list)) != 1:
+                    vendor_inventory_id = vendor_inventory_ids[i].text
+                    miss_matched_id_list.append(vendor_inventory_id)
+                drop_down.click()
+                time.sleep(1)
+            try:
+                next_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//span[@data-wuic-partial='next']/a")))
+            except Exception:
+                break
+        print(" [*] miss matched product detection end.")
+        return miss_matched_id_list
 
     def outdated_prd_deleter(self, del_num, store_name):
         print("[+] outdated product deletion start.")
@@ -1517,7 +1540,7 @@ class Tool:
                         except Exception:
                             self.driver.refresh()
                     time.sleep(0.5)
-                    search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[5]/td/table/tbody/tr[1]/td[2]/a/img')))
+                    search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//img[@src="./images/search_order_list.jpg"]')))
                     time.sleep(0.5)
                     search_btn.click()
                     percent = int(((i+1)/len(prd_name_list))*100)
@@ -1542,10 +1565,10 @@ class Tool:
                                 isPrd = False
                                 break
                     if isPrd:
-                        check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[5]/td/table/tbody/tr[2]/td[1]/input')))
+                        check_all_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//input[@onclick="checkAll(this.checked)"]')))
                         time.sleep(0.5)
                         check_all_btn.click()
-                        delete_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '/html/body/center/table/tbody/tr[3]/td[3]/table/tbody/tr[4]/td/table/tbody/tr[5]/td/table/tbody/tr[2]/td[2]/a[3]/button')))
+                        delete_btn = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.XPATH, '//button[contains(text(), "선택삭제")]')))
                         time.sleep(0.5)
                         delete_btn.click()
                         time.sleep(0.5)
