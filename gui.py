@@ -227,6 +227,7 @@ def daily_sourcing_uploading_action():
                     EdgeTool.append_to_text_widget(message, "blue")
     print("[+] Daily sourcing & uploading successfully end.")
     EdgeTool.dummy_deleter(base_path, 'preprocesednaverSourcedUpdated')
+    EdgeTool.dummy_deleter(base_path, 'preprocesedSourced')
     EdgeTool.dummy_deleter(base_path, 'naverSourced')
     EdgeTool.dummy_deleter(base_path, 'preprocessedNaverSourced')
 

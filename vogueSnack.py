@@ -352,49 +352,49 @@ class Sourcing:
         if not matching_files:
 
             ################ Original ########################
-            # Append data from the naver data lab
-            naver_datalab_url = 'https://datalab.naver.com/'
-            self.pageNavigator(naver_datalab_url)
-                # Get data
-                # Select domain
-            domain_dropdown = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div[1]/div[3]/div[1]/a')))
-            naver_keyword_list = []
-            print("[+] Daily sourcing start.: naver")
-            for i in range(3,10): 
-                domain_dropdown.click()
-                time.sleep(3)
-                domain = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[3]/div[1]/ul/li[{i}]/a')))
-                domain.click()
-                # Get yesterday keyword data 1st ~ 10th
-                for j in range(10):
-                    while True:
-                        time.sleep(1)
-                        try:
-                            keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[4]/div/div[1]/div/div/div[12]/div/div/ul/li[{j+1}]/a/span'))).text
-                            naver_keyword_list.append(keyword)
-                            break
-                        except StaleElementReferenceException:
-                            print(f"Stale element Exception at domain {i}, index {j}")
-                percent = int(((i-2)/7)*100)
-                print(f"\r [*] {percent}% complete..", end='')
-                if percent == 100:
-                    # Print a newline character at the end to move the cursor to the next line
-                    print()
-            print("[+] Daily sourcing start.: sellha")
-            windows = self.driver.window_handles
-            self.driver.switch_to.window(windows[3])
-            self.pageNavigator('https://sellha.kr/')
-            best_keywords = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_all_elements_located((By.XPATH, f'//div[@class="sc-cSnNnL jpuXNa"]')))
-            for i in range(len(best_keywords)):
-                best_keyword_text = best_keywords[i].text
-                naver_keyword_list.append(best_keyword_text)
-                percent = int((i/len(best_keywords))*100)
-                print(f"\r [*] {percent}% complete..", end='')
-                if percent == 100:
-                    # Print a newline character at the end to move the cursor to the next line
-                    print()
+            # # Append data from the naver data lab
+            # naver_datalab_url = 'https://datalab.naver.com/'
+            # self.pageNavigator(naver_datalab_url)
+            #     # Get data
+            #     # Select domain
+            # domain_dropdown = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div[1]/div[3]/div[1]/a')))
+            # naver_keyword_list = []
+            # print("[+] Daily sourcing start.: naver")
+            # for i in range(3,10): 
+            #     domain_dropdown.click()
+            #     time.sleep(3)
+            #     domain = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[3]/div[1]/ul/li[{i}]/a')))
+            #     domain.click()
+            #     # Get yesterday keyword data 1st ~ 10th
+            #     for j in range(10):
+            #         while True:
+            #             time.sleep(1)
+            #             try:
+            #                 keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[4]/div/div[1]/div/div/div[12]/div/div/ul/li[{j+1}]/a/span'))).text
+            #                 naver_keyword_list.append(keyword)
+            #                 break
+            #             except StaleElementReferenceException:
+            #                 print(f"Stale element Exception at domain {i}, index {j}")
+            #     percent = int(((i-2)/7)*100)
+            #     print(f"\r [*] {percent}% complete..", end='')
+            #     if percent == 100:
+            #         # Print a newline character at the end to move the cursor to the next line
+            #         print()
+            # print("[+] Daily sourcing start.: sellha")
+            # windows = self.driver.window_handles
+            # self.driver.switch_to.window(windows[3])
+            # self.pageNavigator('https://sellha.kr/')
+            # best_keywords = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_all_elements_located((By.XPATH, f'//div[@class="sc-cSnNnL jpuXNa"]')))
+            # for i in range(len(best_keywords)):
+            #     best_keyword_text = best_keywords[i].text
+            #     naver_keyword_list.append(best_keyword_text)
+            #     percent = int((i/len(best_keywords))*100)
+            #     print(f"\r [*] {percent}% complete..", end='')
+            #     if percent == 100:
+            #         # Print a newline character at the end to move the cursor to the next line
+            #         print()
             ################ Original ########################
-            # naver_keyword_list = ['가구']
+            naver_keyword_list = ['가구']
             naver_sourced_df = pd.DataFrame(naver_keyword_list, columns=['키워드'])
             naver_sourced_df = naver_sourced_df.drop_duplicates(subset=['키워드'])
             naver_sourced_df.to_csv('naverSourced.csv', encoding='utf-8-sig', index = False)
@@ -726,7 +726,7 @@ class Uploading:
                                         # Coupang and Smart restrict the number of items, I stopped sending like below.
                                         sending_success_num_coupang = self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
                                         sending_success_num_smart = self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
-                                        sending_success_num = min(sending_success_num_coupang, sending_success_num_smart)
+                                        sending_success_num = sending_success_num_coupang
                                         total_sended_num += sending_success_num
                                         preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
                                         preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
@@ -2126,6 +2126,9 @@ class Tool:
                 self.driver.set_page_load_timeout(10)
                 try:
                     prd_image.click()
+                    windows = self.driver.window_handles
+                    window_prd = windows[5]
+                    self.driver.switch_to.window(window_prd)
                 except Exception:
                     self.driver.execute_script("window.stop();") # stop loading the page
                     print("Onchan: product detail didn't load properlly")
@@ -2136,7 +2139,7 @@ class Tool:
                 except Exception:
                     is_adult = False
                 if not is_adult:
-                    price_autonomy_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div[2]/section/div/div[1]/div[3]/ul/li[3]/ul/li[3]/div[2]/span')))
+                    price_autonomy_detail = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'//span[@class = "prod_detail_price price_type_green"]')))
                     price_autonomy_detail_text = price_autonomy_detail.text
                     prd_price = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'/html/body/div/section/div/div/div/div/div[@class="prod_cus_price"]')))
                     prd_price_text = prd_price.text.strip().replace('원','')
@@ -2163,10 +2166,14 @@ class Tool:
                     max_delivery_charge_list.append((prd_code, max_charge))
                     lowest_delivery_charge_list.append((prd_code, lowest_charge))
                     # Move to the back page
-                    self.driver.back()
+                    # self.driver.back()
+                    self.driver.close()
+                    self.driver.switch_to.window(windows[2])
                     counter += 1
                 else: # If the price autonomy is false, back to the page and deselect the product.
-                    self.driver.back()
+                    # self.driver.back()
+                    self.driver.close()
+                    self.driver.switch_to.window(windows[2])
                     checkbox = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="prd_form"]/ul/li[{i+1}]/dl/dd[1]/span[1]')))
                     checkbox.click()
                     continue
