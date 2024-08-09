@@ -1324,15 +1324,15 @@ class Tool:
             if len(prd_name_list) != 0:
                 print(f"[+] {store_name}: Filtering process start.")
                 formatted_string = ','.join(f'{item}' for item in prd_name_list)
-                smart_seller_prd_code_check = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[1]/div/div[2]/label/span')))
+                smart_seller_prd_code_check = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//label/input[@value="SELLER_CODE"]/following-sibling::span')))
                 time.sleep(0.5)
                 smart_seller_prd_code_check.click()
-                smart_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[1]/div/ul/li[1]/div/div/div[2]/textarea')))
+                smart_input_box = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//div[@class="form-group"]/textarea')))
                 time.sleep(0.5)
                 smart_input_box.clear()
                 time.sleep(0.5)
                 smart_input_box.send_keys(formatted_string)
-                smart_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="seller-content"]/ui-view/div[2]/ui-view[1]/div[2]/form/div[2]/div/button[1]')))
+                smart_search_btn = WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.XPATH, '//button[text() = "검색"]')))
                 time.sleep(0.5)
                 smart_search_btn.click()
                 counter = 0
