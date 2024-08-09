@@ -857,7 +857,7 @@ def schedule_actions():
     def check_and_enqueue_daily_task():
         enqueue_task(lambda: daily_btn.invoke())
     # schedule.every().day.at("10:00").do(check_and_enqueue_daily_task)
-    # schedule.every().day.at("20:00").do(check_and_enqueue_daily_task)
+    schedule.every().day.at("20:00").do(check_and_enqueue_daily_task)
 
     # Schedule Product Status Checking Button every 30 minutes to enqueue task
     def enqueue_prd_stat_checking_if_within_time():

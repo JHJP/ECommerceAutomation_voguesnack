@@ -750,7 +750,7 @@ class Uploading:
                                         # print(f"Current item number info: ({i+1}/{len(targetList)})")
                                         sending_success_num_coupang = self.sending_store(checkboxes_numb, originalTarget, coup_btn_path, 'coupang', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_coupang)
                                         sending_success_num_smart = self.sending_store(checkboxes_numb, originalTarget, smt_btn_path, 'smart', net_profit_ratio, max_delivery_charge_list, lowest_delivery_charge_list, discount_rate_calculation, isDaily, isDeliveryCharge_smart)
-                                        sending_success_num = sending_success_num_smart
+                                        sending_success_num = sending_success_num_smart 
                                         total_sended_num += sending_success_num
                                         preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
                                         preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
