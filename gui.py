@@ -61,10 +61,10 @@ def set_default_text():
     coupang_pw_entry.insert(0,"FJQCdcNee5UKB5-")
     net_profit_ratio_entry.insert(0, "5")
     min_rating_entry.insert(0, "3.5")
-    prd_max_num_entry.insert(0, "10")
+    prd_max_num_entry.insert(0, "500")
     min_searched_num_entry.insert(0, "10000")
     sourcing_size_entry.insert(0, "150")
-    prd_min_price_entry.insert(0, "15000")
+    prd_min_price_entry.insert(0, "150000")
 
 def initialize_webdriver():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
