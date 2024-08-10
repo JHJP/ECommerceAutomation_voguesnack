@@ -758,7 +758,7 @@ class Uploading:
                             except Exception as e:
                                 # print(f"Current item number info: ({i+1}/{len(targetList)})")
                                 # print(" [*] Not exist")
-                                print(f" [!] Exception occur during finding product sets: {e}")
+                                print(f" [!] Exception occur during finding product sets(occur when there are no results): {e}")
                                 preprocessed_df.loc[i, 'total_sended_num'] = total_sended_num
                                 preprocessed_df.to_csv(csv_name, encoding='utf-8-sig' , index = False)
                                 preprocessed_df.to_csv('preprocesedSourced.csv', encoding='utf-8-sig' , index = False)
