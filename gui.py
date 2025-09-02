@@ -61,10 +61,15 @@ def set_default_text():
     coupang_pw_entry.insert(0,"wxVZ:_77LYQDvEJ")
     net_profit_ratio_entry.insert(0, "5")
     min_rating_entry.insert(0, "3.5")
-    prd_max_num_entry.insert(0, "10")
+    prd_max_num_entry.insert(0, "500")
     min_searched_num_entry.insert(0, "10000")
+<<<<<<< HEAD
     sourcing_size_entry.insert(0, "100000")
     prd_min_price_entry.insert(0, "15000")
+=======
+    sourcing_size_entry.insert(0, "150")
+    prd_min_price_entry.insert(0, "150000")
+>>>>>>> 3387bce229170d0a80d8573a43547cdadb5d2dc5
 
 def initialize_webdriver():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
@@ -227,6 +232,7 @@ def daily_sourcing_uploading_action():
                     EdgeTool.append_to_text_widget(message, "blue")
     print("[+] Daily sourcing & uploading successfully end.")
     EdgeTool.dummy_deleter(base_path, 'preprocesednaverSourcedUpdated')
+    EdgeTool.dummy_deleter(base_path, 'preprocesedSourced')
     EdgeTool.dummy_deleter(base_path, 'naverSourced')
     EdgeTool.dummy_deleter(base_path, 'preprocessedNaverSourced')
 
@@ -856,7 +862,7 @@ def schedule_actions():
     def check_and_enqueue_daily_task():
         enqueue_task(lambda: daily_btn.invoke())
     # schedule.every().day.at("10:00").do(check_and_enqueue_daily_task)
-    # schedule.every().day.at("20:00").do(check_and_enqueue_daily_task)
+    schedule.every().day.at("20:00").do(check_and_enqueue_daily_task)
 
     # Schedule Product Status Checking Button every 30 minutes to enqueue task
     def enqueue_prd_stat_checking_if_within_time():
