@@ -14,6 +14,7 @@ import dateutil.relativedelta
 import threading
 import schedule
 import queue
+import os
 # After adding edge webdriver path to environment variable, you can execute below code.(ex. )
 
 url = "https://sellha.kr/member/login"
@@ -48,17 +49,26 @@ file_prefix_all = "셀하 아이템 발굴 EXCEL_전체"
 file_prefix_editable = "스마트스토어상품"
 closeBtnXPath = '//*[@id="ch-shadow-root-wrapper"]/article/div/div/div[2]/button'
 
+SELLHA_ID = os.getenv('SELLHA_ID')
+SELLHA_PW = os.getenv('SELLHA_PW')
+ONCHAN_ID = os.getenv('ONCHAN_ID')
+ONCHAN_PW = os.getenv('ONCHAN_PW')
+SMART_ID = os.getenv('SMART_ID')
+SMART_PW = os.getenv('SMART_PW')
+COUPANG_ID = os.getenv('COUPANG_ID')
+COUPANG_PW = os.getenv('COUPANG_PW')
+
 # Initialize the WebDriver
 def set_default_text():
     # Set default text
-    id_entry.insert(0, "papagogo041@gmail.com")
-    password_entry.insert(0, "9Hy:Snc9nqH8.9F")
-    id2_entry.insert(0, "voguesnack@naver.com")
-    password2_entry.insert(0, "z+kx#h%_aQo]{q7")
-    smart_id_entry.insert(0,"voguesnack")
-    smart_pw_entry.insert(0,"rq3.XW.NzXuaCc8")
-    coupang_id_entry.insert(0,"voguesnack")
-    coupang_pw_entry.insert(0,"wxVZ:_77LYQDvEJ")
+    id_entry.insert(0, SELLHA_ID)
+    password_entry.insert(0, SELLHA_PW)
+    id2_entry.insert(0, ONCHAN_ID)
+    password2_entry.insert(0, ONCHAN_PW)
+    smart_id_entry.insert(0,SMART_ID)
+    smart_pw_entry.insert(0,SMART_PW)
+    coupang_id_entry.insert(0,COUPANG_ID)
+    coupang_pw_entry.insert(0,COUPANG_PW)
     net_profit_ratio_entry.insert(0, "5")
     min_rating_entry.insert(0, "3.5")
     prd_max_num_entry.insert(0, "500")
