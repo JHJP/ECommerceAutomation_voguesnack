@@ -441,7 +441,10 @@ class Sourcing:
                     # Print a newline character at the end to move the cursor to the next line
                     print()
             ################ Original ########################
+<<<<<<< HEAD
 >>>>>>> 3387bce229170d0a80d8573a43547cdadb5d2dc5
+=======
+>>>>>>> origin/master
             naver_sourced_df = pd.DataFrame(naver_keyword_list, columns=['키워드'])
             naver_sourced_df = naver_sourced_df.drop_duplicates(subset=['키워드'])
             naver_sourced_df.to_csv('naverSourced.csv', encoding='utf-8-sig', index = False)
