@@ -58,12 +58,12 @@ def set_default_text():
     smart_id_entry.insert(0,"voguesnack")
     smart_pw_entry.insert(0,"rq3.XW.NzXuaCc8")
     coupang_id_entry.insert(0,"voguesnack")
-    coupang_pw_entry.insert(0,"FJQCdcNee5UKB5-")
+    coupang_pw_entry.insert(0,"wxVZ:_77LYQDvEJ")
     net_profit_ratio_entry.insert(0, "5")
     min_rating_entry.insert(0, "3.5")
     prd_max_num_entry.insert(0, "10")
     min_searched_num_entry.insert(0, "10000")
-    sourcing_size_entry.insert(0, "150")
+    sourcing_size_entry.insert(0, "100000")
     prd_min_price_entry.insert(0, "15000")
 
 def initialize_webdriver():

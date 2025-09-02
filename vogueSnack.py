@@ -352,49 +352,49 @@ class Sourcing:
         if not matching_files:
 
             ################ Original ########################
-            # Append data from the naver data lab
-            naver_datalab_url = 'https://datalab.naver.com/'
-            self.pageNavigator(naver_datalab_url)
-                # Get data
-                # Select domain
-            domain_dropdown = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div[1]/div[3]/div[1]/a')))
-            naver_keyword_list = []
-            print("[+] Daily sourcing start.: naver")
-            for i in range(3,10): 
-                domain_dropdown.click()
-                time.sleep(3)
-                domain = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[3]/div[1]/ul/li[{i}]/a')))
-                domain.click()
-                # Get yesterday keyword data 1st ~ 10th
-                for j in range(10):
-                    while True:
-                        time.sleep(1)
-                        try:
-                            keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[4]/div/div[1]/div/div/div[12]/div/div/ul/li[{j+1}]/a/span'))).text
-                            naver_keyword_list.append(keyword)
-                            break
-                        except StaleElementReferenceException:
-                            print(f"Stale element Exception at domain {i}, index {j}")
-                percent = int(((i-2)/7)*100)
-                print(f"\r [*] {percent}% complete..", end='')
-                if percent == 100:
-                    # Print a newline character at the end to move the cursor to the next line
-                    print()
-            print("[+] Daily sourcing start.: sellha")
-            windows = self.driver.window_handles
-            self.driver.switch_to.window(windows[3])
-            self.pageNavigator('https://sellha.kr/')
-            best_keywords = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_all_elements_located((By.XPATH, f'//div[@class="sc-cSnNnL jpuXNa"]')))
-            for i in range(len(best_keywords)):
-                best_keyword_text = best_keywords[i].text
-                naver_keyword_list.append(best_keyword_text)
-                percent = int((i/len(best_keywords))*100)
-                print(f"\r [*] {percent}% complete..", end='')
-                if percent == 100:
-                    # Print a newline character at the end to move the cursor to the next line
-                    print()
+            # # Append data from the naver data lab
+            # naver_datalab_url = 'https://datalab.naver.com/'
+            # self.pageNavigator(naver_datalab_url)
+            #     # Get data
+            #     # Select domain
+            # domain_dropdown = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="content"]/div[1]/div[3]/div[1]/a')))
+            # naver_keyword_list = []
+            # print("[+] Daily sourcing start.: naver")
+            # for i in range(3,10): 
+            #     domain_dropdown.click()
+            #     time.sleep(3)
+            #     domain = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[3]/div[1]/ul/li[{i}]/a')))
+            #     domain.click()
+            #     # Get yesterday keyword data 1st ~ 10th
+            #     for j in range(10):
+            #         while True:
+            #             time.sleep(1)
+            #             try:
+            #                 keyword = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_element_located((By.XPATH, f'//*[@id="content"]/div[1]/div[4]/div/div[1]/div/div/div[12]/div/div/ul/li[{j+1}]/a/span'))).text
+            #                 naver_keyword_list.append(keyword)
+            #                 break
+            #             except StaleElementReferenceException:
+            #                 print(f"Stale element Exception at domain {i}, index {j}")
+            #     percent = int(((i-2)/7)*100)
+            #     print(f"\r [*] {percent}% complete..", end='')
+            #     if percent == 100:
+            #         # Print a newline character at the end to move the cursor to the next line
+            #         print()
+            # print("[+] Daily sourcing start.: sellha")
+            # windows = self.driver.window_handles
+            # self.driver.switch_to.window(windows[3])
+            # self.pageNavigator('https://sellha.kr/')
+            # best_keywords = WebDriverWait(driver=self.driver, timeout=10).until(EC.presence_of_all_elements_located((By.XPATH, f'//div[@class="sc-cSnNnL jpuXNa"]')))
+            # for i in range(len(best_keywords)):
+            #     best_keyword_text = best_keywords[i].text
+            #     naver_keyword_list.append(best_keyword_text)
+            #     percent = int((i/len(best_keywords))*100)
+            #     print(f"\r [*] {percent}% complete..", end='')
+            #     if percent == 100:
+            #         # Print a newline character at the end to move the cursor to the next line
+            #         print()
             ################ Original ########################
-            # naver_keyword_list = ['가구']
+            naver_keyword_list = ['가습기']
             naver_sourced_df = pd.DataFrame(naver_keyword_list, columns=['키워드'])
             naver_sourced_df = naver_sourced_df.drop_duplicates(subset=['키워드'])
             naver_sourced_df.to_csv('naverSourced.csv', encoding='utf-8-sig', index = False)
