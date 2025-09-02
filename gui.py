@@ -63,18 +63,12 @@ def set_default_text():
     min_rating_entry.insert(0, "3.5")
     prd_max_num_entry.insert(0, "500")
     min_searched_num_entry.insert(0, "10000")
-<<<<<<< HEAD
-<<<<<<< HEAD
     sourcing_size_entry.insert(0, "100000")
     prd_min_price_entry.insert(0, "15000")
-=======
     sourcing_size_entry.insert(0, "150")
     prd_min_price_entry.insert(0, "150000")
->>>>>>> 3387bce229170d0a80d8573a43547cdadb5d2dc5
-=======
     sourcing_size_entry.insert(0, "150")
     prd_min_price_entry.insert(0, "150000")
->>>>>>> origin/master
 
 def initialize_webdriver():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
