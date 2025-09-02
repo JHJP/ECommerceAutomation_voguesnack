@@ -75,10 +75,6 @@ def set_default_text():
     min_searched_num_entry.insert(0, "10000")
     sourcing_size_entry.insert(0, "100000")
     prd_min_price_entry.insert(0, "15000")
-    sourcing_size_entry.insert(0, "150")
-    prd_min_price_entry.insert(0, "150000")
-    sourcing_size_entry.insert(0, "150")
-    prd_min_price_entry.insert(0, "150000")
 
 def initialize_webdriver():
     global driver, EdgeSourcing, EdgeUploading, EdgeTool
